@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.db
+*.sqlite
+*.sqlite3
+*.bin
+*.rpt
+backend_1/temp.inp
+.env
+.env.*
+!.env.example
+.vscode/
