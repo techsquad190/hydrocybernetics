@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>
+    HydroCybernetics | Digital Intelligence for Urban Water Networks
+  </title>
+
+  <meta name="description"
+    content="HydroCybernetics — Urban water network digital twin and decision-support platform designed to integrate hydraulic modeling with network monitoring.">
+
+  <meta name="theme-color" content="#081220">
+
+
+  <!-- =========================================================
+       Typography
+       ========================================================= -->
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet">
+
+
+  <!-- =========================================================
+       Leaflet
+       
+       KEEP THIS because other existing application modules
+       may still use Leaflet.
+       ========================================================= -->
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+
+
+  <!-- =========================================================
+       CesiumJS
+       
+       Cesium is now the ONLY map / 3D visualization engine
+       used by the Digital Twin.
+       ========================================================= -->
+
+  <link href="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
+
+
+  <!-- =========================================================
+       CSS Design System
+       ========================================================= -->
+
+  <link rel="stylesheet" href="css/variables.css">
+
+  <link rel="stylesheet" href="css/base.css">
+
+  <link rel="stylesheet" href="css/layout.css">
+
+  <link rel="stylesheet" href="css/components.css">
+
+  <link rel="stylesheet" href="css/network-visual.css">
+
+  <link rel="stylesheet" href="css/digital-twin.css">
+
+</head>
+
+
+<body>
+
+
+  <!-- =========================================================
+       Application Mount Node
+       ========================================================= -->
+
+  <div id="app-root"></div>
+
+
+  <!-- =========================================================
+       Core Configuration
+       ========================================================= -->
+
+  <script src="js/config.js"></script>
+
+  <script src="js/icons.js"></script>
+
+  <script src="js/network-canvas.js"></script>
+
+
+  <!-- =========================================================
+       Leaflet
+       
+       Kept only for compatibility with other existing modules.
+       It is NOT used by the Digital Twin.
+       ========================================================= -->
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+
+  <!-- =========================================================
+       Cesium Ion Configuration
+       
+       IMPORTANT:
+       Replace the token below with your NEW Cesium token
+       after rotating the exposed token.
+       ========================================================= -->
+
+  <script>
+    Cesium.Ion.defaultAccessToken =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IkJYWDZHdVpyUlFjU1FTLWwiLCJqdGkiOiJjMDhkZTI5ZS0xMWRjLTQ0OGUtODEyNy1lNDUzYTBmMjQ5ODgiLCJpZCI6NDc4OTU5LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODgzNTY5MjB9.f1U1SsGC4-rFLopEd57-H5qPWV10fWNUqPwk8W8X80o';
+  </script>
+
+
+  <!-- =========================================================
+       Application Views
+       
+       Cesium is already loaded BEFORE digital-twin.js.
+       ========================================================= -->
+
+  <script src="js/views/landing.js"></script>
+
+  <script src="js/views/auth-citizen.js"></script>
+
+  <script src="js/views/auth-municipal.js"></script>
+
+  <script src="js/views/dashboard-citizen.js"></script>
+
+  <script src="js/views/digital-twin.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/views/dashboard-municipal.js"></script>
+
+
+  <script src="js/views/placeholder.js"></script>
+
+
+  <!-- =========================================================
+       Main Application
+       ========================================================= -->
+
+  <script src="js/app.js"></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,774 @@
+/* Geographic Digital Twin */
+.digital-twin-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dt-header-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-end;
+  padding: 22px 24px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 12px;
+  background: rgba(11, 25, 44, .72);
+}
+
+.dt-eyebrow {
+  font: 600 10px "JetBrains Mono", monospace;
+  letter-spacing: .12em;
+  color: #38bdf8;
+  margin-bottom: 7px;
+}
+
+.dt-title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.dt-subtitle {
+  max-width: 760px;
+  margin: 8px 0 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.dt-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dt-select-label {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dt-scenario-select {
+  min-width: 220px;
+  height: 36px;
+  padding: 0 34px 0 12px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 7px;
+  background: #0b192c;
+  color: #e2e8f0;
+  font-size: 12px;
+}
+
+.dt-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, .7fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.dt-map-card {
+  overflow: hidden;
+}
+
+.dt-map-wrap {
+  position: relative;
+  min-height: 560px;
+}
+
+.dt-map {
+  width: 100%;
+  height: 560px;
+  background: #e2e8f0;
+}
+
+.dt-map-status {
+  font: 600 10px "JetBrains Mono", monospace;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dt-map-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(248, 250, 252, .55);
+  color: #334155;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.dt-legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(148, 163, 184, .12);
+  color: #64748b;
+  font-size: 11px;
+}
+
+.dt-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dt-legend-line {
+  width: 22px;
+  height: 4px;
+  border-radius: 4px;
+  display: inline-block;
+  background: #2563eb;
+}
+
+.dt-legend-line.affected {
+  background: #d97706;
+}
+
+.dt-legend-node {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2563eb;
+  border: 2px solid #0f172a;
+  display: inline-block;
+}
+
+.dt-detail-card {
+  min-height: 560px;
+}
+
+.dt-empty-detail {
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #64748b;
+  padding: 30px;
+}
+
+.dt-empty-icon {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(56, 189, 248, .2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38bdf8;
+  margin-bottom: 14px;
+}
+
+.dt-empty-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.dt-empty-detail h4 {
+  color: #e2e8f0;
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.dt-empty-detail p {
+  max-width: 240px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.dt-selected-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, .12);
+}
+
+.dt-node-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 9px;
+  background: rgba(37, 99, 235, .12);
+  border: 1px solid rgba(37, 99, 235, .28);
+  color: #60a5fa;
+  font: 600 12px "JetBrains Mono", monospace;
+}
+
+.dt-selected-name {
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dt-selected-type {
+  color: #64748b;
+  font-size: 10px;
+  margin-top: 3px;
+}
+
+.dt-detail-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+
+.dt-detail-list>div {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(148, 163, 184, .09);
+  font-size: 11px;
+}
+
+.dt-detail-list span {
+  color: #64748b;
+}
+
+.dt-detail-list strong {
+  color: #e2e8f0;
+  font: 600 11px "JetBrains Mono", monospace;
+  text-align: right;
+}
+
+.dt-negative {
+  color: #d97706 !important;
+}
+
+.dt-detail-note {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(148, 163, 184, .05);
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.dt-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.dt-summary-card {
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, .13);
+  border-radius: 10px;
+  background: rgba(11, 25, 44, .52);
+}
+
+.dt-summary-label {
+  font: 600 9px "JetBrains Mono", monospace;
+  letter-spacing: .1em;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.dt-summary-value {
+  margin-top: 8px;
+  color: #e2e8f0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.dt-summary-value-small {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.dt-summary-detail {
+  margin-top: 4px;
+  color: #475569;
+  font-size: 10px;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #0b192c;
+  color: #e2e8f0;
+}
+
+.leaflet-popup-content {
+  font-family: Inter, sans-serif;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.dt-popup hr {
+  border: 0;
+  border-top: 1px solid rgba(148, 163, 184, .2);
+  margin: 7px 0;
+}
+
+.dt-popup strong {
+  color: #f8fafc;
+}
+
+.dt-node-label {
+  background: #0b192c !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(56, 189, 248, .35) !important;
+  box-shadow: none !important;
+  font: 600 9px "JetBrains Mono", monospace;
+  padding: 2px 5px !important;
+}
+
+.dt-node-label:before {
+  border-top-color: #0b192c !important;
+}
+
+@media (max-width: 1100px) {
+  .dt-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dt-detail-card {
+    min-height: auto;
+  }
+
+  .dt-empty-detail {
+    min-height: 220px;
+  }
+
+  .dt-map {
+    height: 480px;
+  }
+
+  .dt-map-wrap {
+    min-height: 480px;
+  }
+
+  .dt-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .dt-header-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dt-controls {
+    align-items: center;
+  }
+
+  .dt-scenario-select {
+    flex: 1;
+  }
+
+  .dt-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================
+   HYDROCYBERNETICS
+   3D SATELLITE DIGITAL TWIN ENHANCEMENT
+   ========================================================== */
+
+.dt-map {
+  width: 100%;
+  height: 560px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dt-map-wrap {
+  position: relative;
+  min-height: 560px;
+  overflow: hidden;
+}
+
+.dt-map canvas {
+  outline: none;
+}
+
+
+/* ==========================================================
+   3D TERRAIN BADGE
+   ========================================================== */
+
+.dt-3d-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+
+  padding: 7px 12px;
+
+  border-radius: 999px;
+
+  background: rgba(8, 18, 32, 0.90);
+
+  color: #ffffff;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.08em;
+
+  pointer-events: none;
+
+  box-shadow:
+    0 5px 18px rgba(0, 0, 0, 0.35);
+}
+
+.dt-3d-dot {
+  display: inline-block;
+
+  width: 8px;
+  height: 8px;
+
+  margin-right: 7px;
+
+  border-radius: 50%;
+
+  background: #00e5ff;
+
+  box-shadow:
+    0 0 10px rgba(0, 229, 255, 0.95);
+}
+
+
+/* ==========================================================
+   HYDRAULIC JUNCTION
+   ========================================================== */
+
+.dt-hydraulic-node {
+  width: 64px;
+  height: 64px;
+
+  position: relative;
+
+  cursor: pointer;
+
+  pointer-events: auto;
+}
+
+.dt-node-circle {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 36px;
+  height: 36px;
+
+  transform:
+    translate(-50%, -50%);
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #00d9f5;
+
+  border: 3px solid #ffffff;
+
+  color: #06121f;
+
+  font-family:
+    "JetBrains Mono",
+    monospace;
+
+  font-size: 9px;
+
+  font-weight: 900;
+
+  box-shadow:
+    0 0 0 3px rgba(0, 229, 255, 0.70),
+    0 0 20px rgba(0, 229, 255, 0.90),
+    0 5px 16px rgba(0, 0, 0, 0.65);
+
+  z-index: 3;
+}
+
+
+/* ==========================================================
+   JUNCTION LABEL
+   ========================================================== */
+
+.dt-node-label {
+  position: absolute;
+
+  left: 50%;
+  bottom: -9px;
+
+  transform:
+    translateX(-50%);
+
+  padding: 3px 7px;
+
+  border-radius: 5px;
+
+  background:
+    rgba(8, 18, 32, 0.94);
+
+  border:
+    1px solid rgba(255, 255, 255, 0.45);
+
+  color:
+    #ffffff;
+
+  font-family:
+    "JetBrains Mono",
+    monospace;
+
+  font-size: 9px;
+
+  font-weight: 800;
+
+  white-space: nowrap;
+
+  z-index: 5;
+
+  pointer-events: none;
+}
+
+
+/* ==========================================================
+   AFFECTED JUNCTION
+   ========================================================== */
+
+.dt-hydraulic-node.affected .dt-node-circle {
+
+  background:
+    #ff9f1c;
+
+  color:
+    #241300;
+
+  border-color:
+    #ffffff;
+
+  box-shadow:
+    0 0 0 4px rgba(255, 159, 28, 0.85),
+    0 0 28px rgba(255, 159, 28, 1),
+    0 5px 18px rgba(0, 0, 0, 0.7);
+
+  animation:
+    dt-disruption-pulse 1.2s ease-in-out infinite;
+}
+
+.dt-hydraulic-node.affected .dt-node-label {
+
+  background:
+    rgba(70, 35, 0, 0.95);
+
+  border-color:
+    #ff9f1c;
+}
+
+
+@keyframes dt-disruption-pulse {
+
+  0%,
+  100% {
+    transform:
+      translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    transform:
+      translate(-50%, -50%) scale(1.15);
+  }
+}
+
+
+/* ==========================================================
+   SOURCE
+   ========================================================== */
+
+.dt-source-marker {
+  width: 64px;
+  height: 64px;
+
+  position: relative;
+
+  cursor: pointer;
+}
+
+.dt-source-circle {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  width: 36px;
+  height: 36px;
+
+  transform:
+    translate(-50%, -50%);
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background:
+    #ffffff;
+
+  border:
+    4px solid #06121f;
+
+  color:
+    #06121f;
+
+  font-family:
+    "JetBrains Mono",
+    monospace;
+
+  font-weight:
+    900;
+
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.80),
+    0 0 22px rgba(255, 255, 255, 0.85),
+    0 5px 18px rgba(0, 0, 0, 0.65);
+}
+
+.dt-source-label {
+  position: absolute;
+
+  left: 50%;
+  bottom: -10px;
+
+  transform:
+    translateX(-50%);
+
+  padding: 3px 7px;
+
+  border-radius: 5px;
+
+  background:
+    rgba(8, 18, 32, 0.94);
+
+  color:
+    #ffffff;
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+  white-space:
+    nowrap;
+
+  z-index:
+    5;
+}
+
+
+/* ==========================================================
+   MAPLIBRE CONTROLS
+   ========================================================== */
+
+.maplibregl-ctrl-group {
+
+  border-radius:
+    8px !important;
+
+  overflow:
+    hidden;
+
+  box-shadow:
+    0 5px 18px rgba(0, 0, 0, 0.35) !important;
+}
+
+.maplibregl-ctrl-group button {
+
+  width:
+    36px !important;
+
+  height:
+    36px !important;
+}
+
+
+/* ==========================================================
+   POPUP
+   ========================================================== */
+
+.maplibregl-popup-content {
+
+  border-radius:
+    10px !important;
+
+  padding:
+    12px 14px !important;
+}
+
+.dt-popup {
+
+  min-width:
+    180px;
+
+  font-size:
+    12px;
+
+  line-height:
+    1.6;
+}
+
+.dt-popup hr {
+
+  border:
+    0;
+
+  border-top:
+    1px solid #e2e8f0;
+
+  margin:
+    7px 0;
+}
+
+
+/* ==========================================================
+   SCALE
+   ========================================================== */
+
+.maplibregl-ctrl-scale {
+
+  border:
+    1px solid rgba(255, 255, 255, 0.5) !important;
+
+  background:
+    rgba(8, 18, 32, 0.80) !important;
+
+  color:
+    #ffffff !important;
+
+  border-radius:
+    4px;
+
+  font-size:
+    10px;
+}
