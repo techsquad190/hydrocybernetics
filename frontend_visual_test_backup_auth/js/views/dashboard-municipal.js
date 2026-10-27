@@ -115,6 +115,12 @@ const DashboardMunicipalView = {
   },
 
 
+  telemetryState: {
+    pressure: null, flow: null, loading: false, error: null,
+    lastUpdated: null, timer: null
+  },
+
+
   /* ==========================================================
      CONFIGURATION
      ========================================================== */
@@ -671,7 +677,12 @@ const DashboardMunicipalView = {
      MAIN SHELL
      ========================================================== */
 
-  render(activeSubTab = 'overview') {
+  render(activeSubTab = 'digital-twin') {
+
+    /* Overview has been removed from the municipal navigation. */
+    if (activeSubTab === 'overview') {
+      activeSubTab = 'digital-twin';
+    }
 
     return `
 
@@ -686,9 +697,9 @@ const DashboardMunicipalView = {
           <div class="sidebar-header">
 
             <a
-              href="#/municipal/dashboard"
+              href="#/municipal/digital-twin"
               class="sidebar-brand"
-              data-route="/municipal/dashboard"
+              data-route="/municipal/digital-twin"
             >
 
               ${this.icon(
@@ -721,14 +732,6 @@ const DashboardMunicipalView = {
 
 
             <ul class="sidebar-menu">
-
-              ${this.navItem(
-      'overview',
-      '/municipal/dashboard',
-      'Overview',
-      'overview',
-      activeSubTab
-    )}
 
               ${this.navItem(
       'digital-twin',
@@ -785,6 +788,14 @@ const DashboardMunicipalView = {
       '/municipal/reports',
       'Reports',
       'fileText',
+      activeSubTab
+    )}
+
+              ${this.navItem(
+      'telemetry',
+      '/municipal/telemetry',
+      'Telemetry',
+      'gauge',
       activeSubTab
     )}
 
@@ -986,10 +997,6 @@ const DashboardMunicipalView = {
 
     switch (tab) {
 
-      case 'overview':
-        content = this.renderOverview();
-        break;
-
       case 'digital-twin':
         content = this.renderDigitalTwin();
         break;
@@ -1014,8 +1021,12 @@ const DashboardMunicipalView = {
         content = this.renderReports();
         break;
 
+      case 'telemetry':
+        content = this.renderTelemetry();
+        break;
+
       default:
-        content = this.renderOverview();
+        content = this.renderDigitalTwin();
         break;
 
     }
@@ -1079,6 +1090,13 @@ const DashboardMunicipalView = {
         subtitle: 'Hydraulic scenario analysis and citizen water-service reporting',
         icon: 'fileText',
         mode: 'MUNICIPAL REPORTING'
+      },
+
+      telemetry: {
+        title: 'Telemetry',
+        subtitle: 'Live readings received from the ESP32 field sensors',
+        icon: 'gauge',
+        mode: 'ESP32 FIELD DATA'
       },
 
       overview: {
@@ -5701,6 +5719,147 @@ const DashboardMunicipalView = {
   /* ==========================================================
      REPORTS
      ========================================================== */
+
+
+  /* ==========================================================
+     ESP32 TELEMETRY
+     ========================================================== */
+
+  renderTelemetry() {
+    const state = this.telemetryState;
+    const hasPressure = state.pressure !== null && state.pressure !== undefined && Number.isFinite(Number(state.pressure));
+    const hasFlow = state.flow !== null && state.flow !== undefined && Number.isFinite(Number(state.flow));
+    const pressure = hasPressure ? `${this.format(state.pressure, 2)}` : '—';
+    const flow = hasFlow ? `${this.format(state.flow, 3)}` : '—';
+    const updated = state.lastUpdated ? new Date(state.lastUpdated).toLocaleTimeString() : 'Waiting for first reading';
+    const connectionLabel = state.error ? 'ATTENTION REQUIRED' : (state.lastUpdated ? 'API RESPONDING' : 'CONNECTING');
+    const connectionClass = state.error ? 'hc-telemetry-status-error' : 'hc-telemetry-status-ok';
+    return `
+      <style>
+        .hc-telemetry-page{display:flex;flex-direction:column;gap:20px;color:#e5eefb}
+        .hc-telemetry-hero{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:24px 26px;background:linear-gradient(115deg,#10243b 0%,#0c1b2e 72%);border:1px solid #203a55;border-radius:16px}
+        .hc-telemetry-hero-main{display:flex;align-items:center;gap:15px;min-width:0}
+        .hc-telemetry-icon{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:12px;background:#0c3443;border:1px solid #15566a;color:#63dcf4}
+        .hc-telemetry-eyebrow{font:600 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.13em;color:#6d9cbd;text-transform:uppercase;margin-bottom:5px}
+        .hc-telemetry-title{font-size:22px;line-height:1.25;font-weight:700;color:#f4f8ff;margin:0}
+        .hc-telemetry-subtitle{font-size:13px;line-height:1.5;color:#8eabc8;margin:5px 0 0}
+        .hc-telemetry-status{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;border:1px solid #23445b;background:#0b2032;font:600 10px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.05em;white-space:nowrap}
+        .hc-telemetry-status:before{content:'';width:7px;height:7px;border-radius:50%;background:#50d9ae;box-shadow:0 0 10px #50d9ae55}
+        .hc-telemetry-status-error:before{background:#f4a261;box-shadow:0 0 10px #f4a26155}
+        .hc-telemetry-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+        .hc-telemetry-card{min-width:0;padding:19px 20px;background:linear-gradient(145deg,#10253b,#0c1c2e);border:1px solid #203950;border-radius:14px;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+        .hc-telemetry-card:hover{transform:translateY(-2px);border-color:#2c627b;box-shadow:0 10px 24px #02081433}
+        .hc-telemetry-card-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+        .hc-telemetry-card-icon{display:grid;place-items:center;width:36px;height:36px;border:1px solid #254b63;border-radius:10px;background:#0b2b40;color:#69d7f1}
+        .hc-telemetry-chip{font:600 9px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;color:#82a9c7;border:1px solid #244158;border-radius:6px;padding:5px 7px}
+        .hc-telemetry-label{font:600 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;text-transform:uppercase;color:#7596b5}
+        .hc-telemetry-value{font-size:29px;line-height:1.2;font-weight:700;letter-spacing:-.03em;color:#f1f7ff;margin-top:8px;overflow-wrap:anywhere}
+        .hc-telemetry-unit{font-size:13px;font-weight:500;letter-spacing:0;color:#8eabc8;margin-left:5px}
+        .hc-telemetry-note{font-size:12px;line-height:1.5;color:#7895b1;margin:10px 0 0}
+        .hc-telemetry-section{padding:22px 24px;background:#0d1e31;border:1px solid #203950;border-radius:14px}
+        .hc-telemetry-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+        .hc-telemetry-section-title{font-size:15px;font-weight:700;color:#edf5ff;margin:0}
+        .hc-telemetry-section-copy{font-size:12px;color:#819fbd;margin:5px 0 0;line-height:1.5}
+        .hc-telemetry-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+        .hc-telemetry-detail{padding:14px 15px;background:#0a1929;border:1px solid #1c334a;border-radius:10px;min-width:0}
+        .hc-telemetry-detail-label{display:block;font:600 9px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.09em;color:#7596b5;text-transform:uppercase;margin-bottom:7px}
+        .hc-telemetry-detail-value{font-size:13px;font-weight:600;color:#dce9f8;overflow-wrap:anywhere}
+        .hc-telemetry-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:18px;padding-top:16px;border-top:1px solid #1d344a}
+        .hc-telemetry-updated{font-size:11px;color:#7e9ab7}
+        .hc-telemetry-refresh{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid #236078;border-radius:9px;background:#0c3445;color:#8de9fb;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+        .hc-telemetry-refresh:hover{background:#10445a;border-color:#3286a0}
+        @media(max-width:900px){.hc-telemetry-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hc-telemetry-hero{align-items:flex-start;flex-direction:column}}
+        @media(max-width:600px){.hc-telemetry-grid,.hc-telemetry-detail-grid{grid-template-columns:1fr}.hc-telemetry-hero,.hc-telemetry-section{padding:18px}.hc-telemetry-value{font-size:26px}}
+      </style>
+      <div class="hc-telemetry-page">
+        <header class="hc-telemetry-hero">
+          <div class="hc-telemetry-hero-main">
+            <div class="hc-telemetry-icon">${this.icon('gauge', 'icon')}</div>
+            <div>
+              <div class="hc-telemetry-eyebrow">FIELD MONITORING / ESP32</div>
+              <h2 class="hc-telemetry-title">Telemetry &amp; Sensor Monitoring</h2>
+              <p class="hc-telemetry-subtitle">Live hardware readings and communication status for the water distribution network.</p>
+            </div>
+          </div>
+          <div class="hc-telemetry-status ${connectionClass}">${this.escapeHtml(connectionLabel)}</div>
+        </header>
+
+        <section class="hc-telemetry-grid" aria-label="Current telemetry metrics">
+          <article class="hc-telemetry-card">
+            <div class="hc-telemetry-card-top"><div class="hc-telemetry-card-icon">${this.icon('gauge', 'icon')}</div><span class="hc-telemetry-chip">PRESSURE</span></div>
+            <div class="hc-telemetry-label">Pressure Head</div>
+            <div class="hc-telemetry-value">${this.escapeHtml(pressure)}${hasPressure ? '<span class="hc-telemetry-unit">m H₂O</span>' : ''}</div>
+            <p class="hc-telemetry-note">Flow-based pressure-head estimate · decreases above leak threshold</p>
+          </article>
+          <article class="hc-telemetry-card">
+            <div class="hc-telemetry-card-top"><div class="hc-telemetry-card-icon">${this.icon('activity', 'icon') || this.icon('chart', 'icon')}</div><span class="hc-telemetry-chip">YF-S201</span></div>
+            <div class="hc-telemetry-label">Flow Rate</div>
+            <div class="hc-telemetry-value">${this.escapeHtml(flow)}${hasFlow ? '<span class="hc-telemetry-unit">L/s</span>' : ''}</div>
+            <p class="hc-telemetry-note">Latest flow value received from the ESP32.</p>
+          </article>
+          <article class="hc-telemetry-card">
+            <div class="hc-telemetry-card-top"><div class="hc-telemetry-card-icon">${this.icon('wifi', 'icon') || this.icon('monitor', 'icon')}</div><span class="hc-telemetry-chip">CONNECTION</span></div>
+            <div class="hc-telemetry-label">ESP32 Data Link</div>
+            <div class="hc-telemetry-value" style="font-size:22px">${state.error ? 'Check link' : (state.lastUpdated ? 'Responding' : 'Connecting')}</div>
+            <p class="hc-telemetry-note">${state.error ? this.escapeHtml(state.error) : 'Telemetry API communication status.'}</p>
+          </article>
+        </section>
+
+        <section class="hc-telemetry-section">
+          <div class="hc-telemetry-section-head">
+            <div><div class="hc-telemetry-eyebrow">DEVICE STATUS</div><h3 class="hc-telemetry-section-title">Hardware Connection</h3><p class="hc-telemetry-section-copy">Status of the telemetry feed and latest successful update.</p></div>
+            <span class="hc-telemetry-chip">AUTO REFRESH · 3 SEC</span>
+          </div>
+          <div class="hc-telemetry-detail-grid">
+            <div class="hc-telemetry-detail"><span class="hc-telemetry-detail-label">Pressure model</span><span class="hc-telemetry-detail-value">${hasPressure ? 'Estimate active' : 'Waiting for telemetry'}</span></div>
+            <div class="hc-telemetry-detail"><span class="hc-telemetry-detail-label">Flow channel</span><span class="hc-telemetry-detail-value">${hasFlow ? 'Reading available' : 'Waiting for data'}</span></div>
+          </div>
+          <div class="hc-telemetry-actions"><span class="hc-telemetry-updated">Last successful refresh: ${this.escapeHtml(updated)}</span><button type="button" class="hc-telemetry-refresh" onclick="DashboardMunicipalView.loadTelemetry()">${this.icon('refreshCw', 'icon')} Refresh readings</button></div>
+        </section>
+      </div>`;
+  },
+
+  async loadTelemetry() {
+    const state = this.telemetryState;
+    const config = this.getConfig();
+    state.error = null;
+    try {
+      const [pressureResponse, flowResponse] = await Promise.all([
+        this.fetchJson(`${config.baseUrl}${config.pressure}`),
+        this.fetchJson(`${config.baseUrl}${config.flow}`)
+      ]);
+      state.pressure = pressureResponse.pressure;
+      state.flow = flowResponse.flow;
+      state.lastUpdated = new Date().toISOString();
+    } catch (error) {
+      state.pressure = null;
+      state.flow = null;
+      state.error = `Unable to fetch ESP32 telemetry: ${error.message}`;
+    } finally {
+      if ((window.location.hash || '').includes('/municipal/telemetry')) {
+        this.updateContainer(this.renderTelemetry());
+      }
+    }
+  },
+
+  startTelemetryPolling() {
+    this.stopTelemetryPolling();
+    this.loadTelemetry();
+    this.telemetryState.timer = setInterval(() => {
+      if ((window.location.hash || '').includes('/municipal/telemetry')) {
+        this.loadTelemetry();
+      } else {
+        this.stopTelemetryPolling();
+      }
+    }, 3000);
+  },
+
+  stopTelemetryPolling() {
+    if (this.telemetryState && this.telemetryState.timer) {
+      clearInterval(this.telemetryState.timer);
+      this.telemetryState.timer = null;
+    }
+  },
 
 
   renderReports() {
@@ -10342,6 +10501,7 @@ const DashboardMunicipalView = {
   init() {
 
     this.stopAnalyticsTelemetryPolling();
+    this.stopTelemetryPolling();
 
     this.destroyAnalyticsCharts();
 
@@ -10539,6 +10699,10 @@ const DashboardMunicipalView = {
 
     }
 
+    if (hash.includes('/municipal/telemetry')) {
+      setTimeout(() => this.startTelemetryPolling(), 0);
+    }
+
   }
 
 
@@ -10559,6 +10723,7 @@ console.log(
 
 /* ============================================================
    HYDROCYBERNETICS — MODERN MUNICIPAL VISUAL LAYER
+   ALERT ENGINE REVISION: 2026-09-17-A
    ============================================================
    This layer upgrades the visual presentation of:
      - Hydraulic Simulation
@@ -10710,6 +10875,43 @@ console.log(
   };
 
 
+  /*
+   * Digital Twin owns its own scenario switching.
+   * Do not route these controls through DashboardMunicipalView.switchScenario,
+   * because that method belongs to the Hydraulic Simulation module.
+   */
+  DM.switchDigitalTwinScenario = function (
+    scenario
+  ) {
+
+    if (
+      typeof DigitalTwinView !== 'undefined' &&
+      DigitalTwinView &&
+      typeof DigitalTwinView.switchScenario === 'function'
+    ) {
+      DigitalTwinView.switchScenario(
+        scenario
+      );
+      return;
+    }
+
+    if (
+      typeof DigitalTwinView !== 'undefined' &&
+      DigitalTwinView &&
+      typeof DigitalTwinView.load === 'function'
+    ) {
+      DigitalTwinView.load(
+        scenario
+      );
+      return;
+    }
+
+    console.error(
+      'HydroCybernetics: Digital Twin scenario controller is unavailable.'
+    );
+  };
+
+
   DM.modernScenarioControls = function (
     activeScenario,
     handlerName,
@@ -10791,257 +10993,333 @@ console.log(
      ========================================================== */
 
   DM.renderSimulation = function () {
-
+  
     const state =
-      this.simulationState;
-
+      this.simulationState || {};
+  
     if (state.loading) {
-
-      return this.loadingCard(
-        'HYDRAULIC SIMULATION',
-        'Fetching EPANET/WNTR scenario calculations...'
-      );
-
+  
+      return `
+        <div class="hc-simulation-modern hc-simulation-state">
+          <div class="hc-simulation-state-icon">
+            ${this.icon('simulate', 'icon')}
+          </div>
+          <div class="analytics-section-label">
+            HYDRAULIC SIMULATION ENGINE
+          </div>
+          <h3>Loading Hydraulic Simulation</h3>
+          <p>Fetching EPANET/WNTR scenario calculations...</p>
+        </div>
+      `;
+  
     }
-
+  
     if (state.error) {
-
+  
       return this.errorCard(
         'Simulation Data Unavailable',
         state.error,
         `
           <button
+            type="button"
             class="btn btn-secondary btn-sm"
             onclick="
               DashboardMunicipalView.loadSimulationData(
                 '${this.escapeHtml(
-          state.currentScenario
-        )}'
+                  state.currentScenario || 'baseline'
+                )}'
               );
             "
           >
+            ${this.icon('refresh', 'icon')}
             Retry
           </button>
         `
       );
-
+  
     }
-
+  
     const result =
-      state.results;
-
+      state.results || {};
+  
     const nodes =
-      result &&
-        Array.isArray(result.nodes)
+      Array.isArray(result.nodes)
         ? result.nodes
         : [];
-
+  
     const pipes =
-      result &&
-        Array.isArray(result.pipes)
+      Array.isArray(result.pipes)
         ? result.pipes
         : [];
-
+  
     const avgPressure =
-      result &&
-        result.average_pressure != null
+      result.average_pressure != null
         ? this.number(
-          result.average_pressure,
-          null
-        )
+            result.average_pressure,
+            null
+          )
         : null;
-
+  
     const p1 =
       pipes.find(
         pipe =>
           String(pipe.id) === 'P1'
       );
-
+  
     const p1Flow =
-      p1 &&
-        p1.flow != null
+      p1 && p1.flow != null
         ? this.number(
-          p1.flow,
-          null
-        )
+            p1.flow,
+            null
+          )
         : null;
-
+  
     const totalFlow =
-      result &&
-        result.total_abs_flow != null
+      result.total_abs_flow != null
         ? this.number(
-          result.total_abs_flow,
-          null
-        )
+            result.total_abs_flow,
+            null
+          )
         : null;
-
+  
     const scenarioLabel =
       this.scenarioLabel(
-        state.currentScenario
+        state.currentScenario || 'baseline'
       );
-
+  
+    const scenarioStatus =
+      state.currentScenario === 'baseline'
+        ? 'NORMAL'
+        : 'SCENARIO';
+  
     return `
-
-      <div class="hc-modern-module-content">
-
-        <div class="hc-modern-toolbar">
-
-          <div>
-
+  
+      <div class="hc-simulation-modern">
+  
+        <div class="hc-simulation-header">
+  
+          <div class="hc-simulation-header-left">
+  
+            <div class="hc-simulation-header-icon">
+              ${this.icon('simulate', 'icon')}
+            </div>
+  
+            <div>
+  
+              <div class="analytics-section-label">
+                HYDRAULIC SIMULATION ENGINE
+              </div>
+  
+              <h2 class="hc-simulation-title">
+                Scenario Simulation
+              </h2>
+  
+              <p class="hc-simulation-subtitle">
+                Execute and inspect hydraulic states returned directly
+                by the EPANET/WNTR simulation backend.
+              </p>
+  
+            </div>
+  
+          </div>
+  
+          <span class="hc-simulation-status">
+            ${this.escapeHtml(scenarioStatus)}
+          </span>
+  
+        </div>
+  
+  
+        <div class="hc-simulation-control">
+  
+          <div class="hc-simulation-control-copy">
+  
             <div class="analytics-section-label">
               HYDRAULIC SCENARIO CONTROL
             </div>
-
-            <div class="hc-modern-toolbar-title">
+  
+            <div class="hc-simulation-control-title">
               ${this.escapeHtml(scenarioLabel)}
             </div>
-
-            <div class="hc-modern-toolbar-subtitle">
-              Select a scenario to execute and inspect the
-              corresponding EPANET/WNTR hydraulic state.
-            </div>
-
-          </div>
-
-          ${this.modernScenarioControls(
-      state.currentScenario,
-      'switchScenario'
-    )}
-
-        </div>
-
-
-        <div class="analytics-engine-kpi-grid hc-modern-kpi-grid">
-
-          ${this.renderModernMetric(
-      'AVERAGE PRESSURE',
-      avgPressure == null
-        ? '—'
-        : this.format(avgPressure),
-      'm',
-      'gauge',
-      'normal',
-      'EPANET/WNTR result'
-    )}
-
-          ${this.renderModernMetric(
-      'P1 FLOW',
-      p1Flow == null
-        ? '—'
-        : this.format(p1Flow),
-      'L/s',
-      'flow',
-      'info',
-      'Reference source pipe'
-    )}
-
-          ${this.renderModernMetric(
-      'TOTAL ABSOLUTE FLOW',
-      totalFlow == null
-        ? '—'
-        : this.format(totalFlow),
-      'L/s',
-      'chart',
-      'info',
-      'Network hydraulic output'
-    )}
-
-          ${this.renderModernMetric(
-      'NETWORK ELEMENTS',
-      `${nodes.length} / ${pipes.length}`,
-      '',
-      'network',
-      'normal',
-      'Junctions / pipes'
-    )}
-
-        </div>
-
-
-        <div class="hc-modern-section-heading">
-
-          <div>
-
-            <div class="analytics-section-label">
-              HYDRAULIC STATE
-            </div>
-
-            <h3>
-              Scenario Results
-            </h3>
-
+  
             <p>
-              Node pressure and pipe-flow outputs returned directly
-              by the hydraulic simulation backend.
+              Select a scenario to execute and inspect its
+              corresponding hydraulic state.
             </p>
-
+  
           </div>
-
-          <span class="analytics-engine-unit">
-            ${this.escapeHtml(scenarioLabel)}
-          </span>
-
+  
+          <div class="hc-simulation-control-actions">
+  
+            ${this.modernScenarioControls(
+              state.currentScenario || 'baseline',
+              'switchScenario'
+            )}
+  
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm hc-simulation-refresh"
+              onclick="
+                DashboardMunicipalView.loadSimulationData(
+                  '${this.escapeHtml(
+                    state.currentScenario || 'baseline'
+                  )}'
+                );
+              "
+              title="Reload scenario data"
+            >
+              ${this.icon('refresh', 'icon')}
+              Refresh
+            </button>
+  
+          </div>
+  
         </div>
-
-
-        <div class="hc-modern-two-column">
-
-          ${this.renderModernPanel(
-      'Junction Pressures',
-      'Hydraulic pressure head at each modeled junction.',
-      this.renderNodeTable(nodes),
-      'gauge',
-      'NODE STATE'
-    )}
-
-          ${this.renderModernPanel(
-      'Pipe Flows',
-      'Hydraulic flow output across modeled pipes.',
-      this.renderPipeTable(pipes),
-      'flow',
-      'PIPE STATE'
-    )}
-
+  
+  
+        <div class="hc-simulation-kpi-grid">
+  
+          ${this.renderModernMetric(
+            'AVERAGE PRESSURE',
+            avgPressure == null
+              ? '—'
+              : this.format(avgPressure),
+            'm',
+            'gauge',
+            'normal',
+            'EPANET/WNTR result'
+          )}
+  
+          ${this.renderModernMetric(
+            'P1 FLOW',
+            p1Flow == null
+              ? '—'
+              : this.format(p1Flow),
+            'L/s',
+            'pipeline',
+            'info',
+            'Reference source pipe'
+          )}
+  
+          ${this.renderModernMetric(
+            'TOTAL ABSOLUTE FLOW',
+            totalFlow == null
+              ? '—'
+              : this.format(totalFlow),
+            'L/s',
+            'chart',
+            'info',
+            'Network hydraulic output'
+          )}
+  
+          ${this.renderModernMetric(
+            'NETWORK ELEMENTS',
+            `${nodes.length} / ${pipes.length}`,
+            '',
+            'map',
+            'normal',
+            'Junctions / pipes'
+          )}
+  
         </div>
+  
+  
+        <section class="hc-simulation-results-card">
 
+          <div class="hc-simulation-section-heading">
 
-        ${state.currentScenario !== 'baseline'
-        ? `
-              <div class="hc-modern-comparison-wrap">
-                ${this.renderScenarioComparison(
-          state.comparison
-        )}
+            <div>
+
+              <div class="analytics-section-label">
+                HYDRAULIC STATE
               </div>
-            `
-        : ''
-      }
 
+              <h3>
+                Scenario Results
+              </h3>
 
-        <div class="hc-modern-source-strip">
+              <p>
+                Node pressure and pipe-flow outputs returned directly
+                by the hydraulic simulation backend.
+              </p>
 
-          <div class="hc-modern-source-icon">
-            ${this.icon('checkCircle', 'icon')}
-          </div>
+            </div>
 
-          <div>
-
-            <strong>
-              Hydraulic source verified
-            </strong>
-
-            <span>
-              Values shown in this module are returned by
-              EPANET/WNTR through the Flask simulation API.
+            <span class="analytics-engine-unit">
+              ${this.escapeHtml(scenarioLabel)}
             </span>
 
           </div>
 
+          <div class="hc-simulation-results-grid">
+
+            <div class="hc-simulation-result-panel">
+
+              ${this.renderModernPanel(
+                'Junction Pressures',
+                'Hydraulic pressure head at each modeled junction.',
+                this.renderNodeTable(nodes),
+                'gauge',
+                'NODE STATE'
+              )}
+
+            </div>
+
+            <div class="hc-simulation-result-panel">
+
+              ${this.renderModernPanel(
+                'Pipe Flows',
+                'Hydraulic flow output across modeled pipes.',
+                this.renderPipeTable(pipes),
+                'pipeline',
+                'PIPE STATE'
+              )}
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        ${
+          state.currentScenario !== 'baseline'
+            ? `
+              <div class="hc-simulation-comparison">
+                ${this.renderScenarioComparison(
+                  state.comparison
+                )}
+              </div>
+            `
+            : ''
+        }
+  
+  
+        <div class="hc-simulation-source-strip">
+  
+          <div class="hc-simulation-source-icon">
+            ${this.icon('checkCircle', 'icon')}
+          </div>
+  
+          <div>
+  
+            <strong>
+              Hydraulic source verified
+            </strong>
+  
+            <span>
+              Values shown in this module are returned by
+              EPANET/WNTR through the Flask simulation API.
+            </span>
+  
+          </div>
+  
         </div>
-
+  
       </div>
-
+  
     `;
-
+  
   };
 
 
@@ -11052,7 +11330,7 @@ console.log(
   DM.renderLeakAnalysis = function () {
 
     const state =
-      this.leakState;
+      this.leakState || {};
 
     if (state.loading) {
 
@@ -11070,15 +11348,15 @@ console.log(
         state.error,
         `
           <button
+            type="button"
             class="btn btn-secondary btn-sm"
             onclick="
               DashboardMunicipalView.loadLeakAnalysis(
-                '${this.escapeHtml(
-          state.scenario
-        )}'
+                '${this.escapeHtml(state.scenario || 'j4_leak')}'
               );
             "
           >
+            ${this.icon('refresh', 'icon')}
             Retry
           </button>
         `
@@ -11086,14 +11364,11 @@ console.log(
 
     }
 
-    if (
-      !state.baseline ||
-      !state.current
-    ) {
+    if (!state.baseline || !state.current) {
 
       return `
 
-        <div class="hc-modern-empty-module">
+        <div class="hc-modern-empty-module hc-leak-empty">
 
           <div class="hc-modern-empty-icon">
             ${this.icon('leakAlert', 'icon')}
@@ -11115,23 +11390,17 @@ console.log(
           <div class="hc-modern-action-row">
 
             <button
+              type="button"
               class="btn btn-primary"
-              onclick="
-                DashboardMunicipalView.loadLeakAnalysis(
-                  'j4_leak'
-                );
-              "
+              onclick="DashboardMunicipalView.loadLeakAnalysis('j4_leak');"
             >
               Analyse J4
             </button>
 
             <button
+              type="button"
               class="btn btn-secondary"
-              onclick="
-                DashboardMunicipalView.loadLeakAnalysis(
-                  'j6_leak'
-                );
-              "
+              onclick="DashboardMunicipalView.loadLeakAnalysis('j6_leak');"
             >
               Analyse J6
             </button>
@@ -11148,24 +11417,34 @@ console.log(
       this.buildComparison(
         state.baseline,
         state.current
-      );
+      ) || { nodes: [], pipes: [] };
+
+    const nodes =
+      Array.isArray(comparison.nodes)
+        ? comparison.nodes
+        : [];
+
+    const pipes =
+      Array.isArray(comparison.pipes)
+        ? comparison.pipes
+        : [];
 
     const nodeChanges =
-      comparison.nodes
+      nodes
         .slice()
         .sort(
           (a, b) =>
-            Math.abs(b.delta) -
-            Math.abs(a.delta)
+            Math.abs(this.number(b.delta)) -
+            Math.abs(this.number(a.delta))
         );
 
     const pipeChanges =
-      comparison.pipes
+      pipes
         .slice()
         .sort(
           (a, b) =>
-            Math.abs(b.delta) -
-            Math.abs(a.delta)
+            Math.abs(this.number(b.delta)) -
+            Math.abs(this.number(a.delta))
         );
 
     const largestNode =
@@ -11177,210 +11456,343 @@ console.log(
     const significantNodes =
       nodeChanges.filter(
         item =>
-          Math.abs(
-            this.number(
-              item.delta
-            )
-          ) >= 0.05
+          Math.abs(this.number(item.delta)) >= 0.05
       );
 
     const significantPipes =
       pipeChanges.filter(
         item =>
-          Math.abs(
-            this.number(
-              item.delta
-            )
-          ) >= 0.05
+          Math.abs(this.number(item.delta)) >= 0.05
       );
+
+    const scenarioLabel =
+      this.scenarioLabel(state.scenario);
+
+    const pressureDelta =
+      largestNode
+        ? this.signed(largestNode.delta)
+        : '0.00';
+
+    const flowDelta =
+      largestPipe
+        ? this.signed(largestPipe.delta)
+        : '0.00';
+
+    // The affected junction is the configured disruption point,
+    // not necessarily the junction with the largest pressure residual.
+    // Keep largestNode for the MAX PRESSURE CHANGE metric.
+    const affectedJunctionId =
+      state.scenario === 'j4_leak'
+        ? 'J4'
+        : state.scenario === 'j6_leak'
+          ? 'J6'
+          : null;
+
+    const pressureTone =
+      largestNode &&
+      Math.abs(this.number(largestNode.delta)) >= 0.05
+        ? 'warning'
+        : 'normal';
+
+    const flowTone =
+      largestPipe &&
+      Math.abs(this.number(largestPipe.delta)) >= 0.05
+        ? 'warning'
+        : 'normal';
 
     return `
 
-      <div class="hc-modern-module-content">
+      <div class="hc-modern-module-content hc-leak-modern">
 
-        <div class="hc-modern-toolbar">
+        <div class="dash-card hc-leak-shell">
 
-          <div>
+          <div class="dash-card-header hc-leak-shell-header">
+
+            <div class="dash-card-title-wrap">
+
+              <div class="icon-box">
+                ${this.icon(
+                  'leakAlert',
+                  'icon'
+                )}
+              </div>
+
+              <div>
+                <h2 class="dash-card-title">
+                  Leak Analysis
+                </h2>
+
+                <p class="dash-card-subtitle">
+                  Hydraulic divergence and anomaly localization
+                </p>
+              </div>
+
+            </div>
+
+            <div class="hc-leak-shell-mode">
+
+              <span class="hc-leak-mode-dot"></span>
+
+              <div>
+                <strong>ANOMALY ANALYSIS</strong>
+                <span>EPANET / WNTR · MODEL-DERIVED</span>
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="dash-card-body hc-leak-shell-body">
+
+        <div class="hc-modern-toolbar hc-leak-toolbar">
+
+          <div class="hc-leak-toolbar-copy">
 
             <div class="analytics-section-label">
               ANOMALY LOCALIZATION ENGINE
             </div>
 
             <div class="hc-modern-toolbar-title">
-              ${this.escapeHtml(
-      this.scenarioLabel(
-        state.scenario
-      )
-    )}
+              ${this.escapeHtml(scenarioLabel)}
             </div>
 
             <div class="hc-modern-toolbar-subtitle">
-              Residual pressure and flow divergence relative to
-              the baseline hydraulic state.
+              Hydraulic divergence from the EPANET/WNTR baseline,
+              with affected junctions and pipes surfaced first.
             </div>
 
           </div>
 
-          ${this.modernScenarioControls(
+          <div class="hc-leak-toolbar-right">
+
+            <div class="hc-leak-mode-badge">
+              <span class="hc-leak-mode-dot"></span>
+              <div>
+                <strong>ANOMALY ANALYSIS</strong>
+                <span>MODEL-DERIVED</span>
+              </div>
+            </div>
+
+            ${this.modernScenarioControls(
       state.scenario,
       'loadLeakAnalysis',
       false
     )}
 
-        </div>
-
-
-        <div class="analytics-engine-kpi-grid hc-modern-kpi-grid">
-
-          ${this.renderModernMetric(
-      'PRESSURE DIVERGENCE',
-      largestNode
-        ? this.signed(
-          largestNode.delta
-        )
-        : '0.00',
-      'm',
-      'gauge',
-      Math.abs(
-        this.number(
-          largestNode?.delta
-        )
-      ) >= 0.05
-        ? 'warning'
-        : 'normal',
-      largestNode
-        ? `Largest change at ${largestNode.id}`
-        : 'No divergence'
-    )}
-
-          ${this.renderModernMetric(
-      'AFFECTED NODE',
-      largestNode
-        ? largestNode.id
-        : '—',
-      '',
-      'network',
-      significantNodes.length
-        ? 'warning'
-        : 'normal',
-      `${significantNodes.length} significant node changes`
-    )}
-
-          ${this.renderModernMetric(
-      'FLOW DIVERGENCE',
-      largestPipe
-        ? this.signed(
-          largestPipe.delta
-        )
-        : '0.00',
-      'L/s',
-      'flow',
-      Math.abs(
-        this.number(
-          largestPipe?.delta
-        )
-      ) >= 0.05
-        ? 'warning'
-        : 'normal',
-      largestPipe
-        ? `Largest change on ${largestPipe.id}`
-        : 'No divergence'
-    )}
-
-          ${this.renderModernMetric(
-      'AFFECTED PIPES',
-      String(
-        significantPipes.length
-      ),
-      '',
-      'chart',
-      significantPipes.length
-        ? 'warning'
-        : 'normal',
-      'Threshold: |Δ| ≥ 0.05'
-    )}
+          </div>
 
         </div>
 
 
-        <div class="hc-modern-section-heading">
+        <div class="hc-leak-summary-grid">
 
-          <div>
+          <div class="hc-leak-summary-card ${pressureTone === 'warning' ? 'is-warning' : ''}">
 
-            <div class="analytics-section-label">
-              RESIDUAL ANALYSIS
+            <div class="hc-leak-summary-icon">
+              ${this.icon('gauge', 'icon')}
             </div>
 
-            <h3>
-              Hydraulic Divergence Map
-            </h3>
-
-            <p>
-              The largest deviations are surfaced first so an
-              operator can immediately identify affected elements.
-            </p>
+            <div class="hc-leak-summary-copy">
+              <span>MAX PRESSURE CHANGE</span>
+              <strong>
+                ${this.escapeHtml(pressureDelta)}
+                <small>m</small>
+              </strong>
+              <small>
+                ${largestNode ? `Largest residual at ${this.escapeHtml(largestNode.id)}` : 'No pressure divergence'}
+              </small>
+            </div>
 
           </div>
 
-          <span class="analytics-engine-unit">
-            BASELINE → ${this.escapeHtml(
-      this.scenarioLabel(
-        state.scenario
-      )
-    )}
+
+          <div class="hc-leak-summary-card ${significantNodes.length ? 'is-warning' : ''}">
+
+            <div class="hc-leak-summary-icon">
+              ${this.icon('alertCircle', 'icon')}
+            </div>
+
+            <div class="hc-leak-summary-copy">
+              <span>AFFECTED JUNCTION</span>
+              <strong>
+                ${affectedJunctionId ? this.escapeHtml(affectedJunctionId) : '—'}
+              </strong>
+              <small>
+                ${significantNodes.length} significant node changes
+              </small>
+            </div>
+
+          </div>
+
+
+          <div class="hc-leak-summary-card ${flowTone === 'warning' ? 'is-warning' : ''}">
+
+            <div class="hc-leak-summary-icon">
+              ${this.icon('monitor', 'icon')}
+            </div>
+
+            <div class="hc-leak-summary-copy">
+              <span>MAX FLOW CHANGE</span>
+              <strong>
+                ${this.escapeHtml(flowDelta)}
+                <small>L/s</small>
+              </strong>
+              <small>
+                ${largestPipe ? `Largest residual on ${this.escapeHtml(largestPipe.id)}` : 'No flow divergence'}
+              </small>
+            </div>
+
+          </div>
+
+
+          <div class="hc-leak-summary-card ${significantPipes.length ? 'is-warning' : ''}">
+
+            <div class="hc-leak-summary-icon">
+              ${this.icon('chart', 'icon')}
+            </div>
+
+            <div class="hc-leak-summary-copy">
+              <span>AFFECTED PIPES</span>
+              <strong>
+                ${significantPipes.length}
+              </strong>
+              <small>
+                Threshold: |Δ| ≥ 0.05
+              </small>
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="hc-leak-dispatch-heading">
+
+          <div>
+            <div class="analytics-section-label">
+              HYDRAULIC DIVERGENCE
+            </div>
+            <h3>
+              Residual Analysis
+            </h3>
+            <p>
+              Compare the scenario against baseline and inspect the
+              strongest pressure and flow deviations.
+            </p>
+          </div>
+
+          <span class="hc-leak-dispatch-count">
+            BASELINE → ${this.escapeHtml(scenarioLabel)}
           </span>
 
         </div>
 
 
-        <div class="hc-modern-two-column">
+        <div class="hc-modern-two-column hc-leak-analysis-grid">
 
-          ${this.renderModernPanel(
-      'Nodal Pressure Residuals',
-      'Current pressure head compared with baseline.',
-      this.renderModernNodeResiduals(
-        nodeChanges
-      ),
+          ${this.renderLeakResidualPanel(
+      'PRESSURE RESIDUALS',
+      'Nodal Pressure',
+      'Baseline → current pressure head by junction.',
+      this.renderModernNodeResiduals(nodeChanges),
       'gauge',
-      'PRESSURE'
+      `${significantNodes.length} SIGNIFICANT`
     )}
 
-          ${this.renderModernPanel(
-      'Pipe Flow Residuals',
-      'Current pipe flow compared with baseline.',
-      this.renderModernPipeResiduals(
-        pipeChanges
-      ),
-      'flow',
-      'FLOW'
+          ${this.renderLeakResidualPanel(
+      'FLOW RESIDUALS',
+      'Pipe Flow',
+      'Baseline → current flow response by pipe.',
+      this.renderModernPipeResiduals(pipeChanges),
+      'pipeline',
+      `${significantPipes.length} SIGNIFICANT`
     )}
 
         </div>
 
 
-        <div class="hc-modern-source-strip">
+        <div class="hc-modern-source-strip hc-leak-boundary">
 
           <div class="hc-modern-source-icon">
             ${this.icon('info', 'icon')}
           </div>
 
           <div>
-
-            <strong>
-              Interpretation
-            </strong>
-
+            <strong>Interpretation boundary</strong>
             <span>
               Divergence indicates a modeled difference from the
-              baseline state. It is an analytical signal and does
-              not by itself constitute a confirmed physical leak.
+              baseline hydraulic state. It is an analytical signal
+              and does not by itself confirm a physical leak.
             </span>
+          </div>
+
+        </div>
 
           </div>
 
         </div>
 
       </div>
+
+    `;
+
+  };
+
+
+  DM.renderLeakResidualPanel = function (
+    eyebrow,
+    title,
+    subtitle,
+    body,
+    iconName = 'chart',
+    badge = ''
+  ) {
+
+    return `
+
+      <section class="hc-leak-residual-panel">
+
+        <div class="hc-leak-residual-header">
+
+          <div class="hc-leak-residual-title-wrap">
+
+            <div class="hc-leak-residual-icon">
+              ${this.icon(iconName, 'icon')}
+            </div>
+
+            <div class="hc-leak-residual-heading">
+
+              <div class="hc-leak-residual-eyebrow">
+                ${this.escapeHtml(eyebrow)}
+              </div>
+
+              <h3>
+                ${this.escapeHtml(title)}
+              </h3>
+
+              <p>
+                ${this.escapeHtml(subtitle)}
+              </p>
+
+            </div>
+
+          </div>
+
+          ${badge
+        ? `
+              <span class="hc-leak-residual-badge">
+                ${this.escapeHtml(badge)}
+              </span>
+            `
+        : ''}
+
+        </div>
+
+        <div class="hc-leak-residual-body">
+          ${body}
+        </div>
+
+      </section>
 
     `;
 
@@ -11576,13 +11988,13 @@ console.log(
   DM.renderAlerts = function () {
 
     const state =
-      this.alertsState;
+      this.alertsState || {};
 
     if (state.loading) {
 
       return this.loadingCard(
         'OPERATIONAL ALERTS',
-        'Analysing hydraulic scenarios for event conditions...'
+        'Evaluating the configured hydraulic event scenarios...'
       );
 
     }
@@ -11594,11 +12006,11 @@ console.log(
         state.error,
         `
           <button
+            type="button"
             class="btn btn-secondary btn-sm"
-            onclick="
-              DashboardMunicipalView.loadAlerts();
-            "
+            onclick="DashboardMunicipalView.loadAlerts();"
           >
+            ${this.icon('refresh', 'icon')}
             Retry
           </button>
         `
@@ -11614,383 +12026,409 @@ console.log(
 
       return this.loadingCard(
         'OPERATIONAL ALERT ENGINE',
-        'Preparing hydraulic event advisories...'
+        'Preparing scenario advisories...'
       );
 
     }
 
-    const j4 =
-      this.buildComparison(
-        state.baseline,
-        state.j4
-      );
+    /*
+     * Alerts are tied to the configured disruption junctions.
+     * They do not infer a physical leak and do not replace the
+     * complete Simulation or Leak Analysis views.
+     */
 
-    const j6 =
-      this.buildComparison(
-        state.baseline,
-        state.j6
-      );
+    const buildEvent =
+      (scenarioData, scenarioKey, targetNodeId) => {
 
-    const j4Node =
-      this.largestChange(
-        j4.nodes
-      );
+        const comparison =
+          this.buildComparison(
+            state.baseline,
+            scenarioData
+          );
 
-    const j6Node =
-      this.largestChange(
-        j6.nodes
-      );
+        const targetId =
+          String(targetNodeId || '').toUpperCase();
 
-    const j4Pipe =
-      this.largestChange(
-        j4.pipes
-      );
+        const node =
+          Array.isArray(comparison.nodes)
+            ? comparison.nodes.find(
+              item =>
+                String(item.id || '').toUpperCase() ===
+                targetId
+            ) || null
+            : null;
 
-    const j6Pipe =
-      this.largestChange(
-        j6.pipes
-      );
+        // The affected link is the configured disruption link, not
+        // whichever pipe happens to have the largest flow change.
+        // Keep the largest-change pipe separate so FLOW RESPONSE
+        // continues to reflect the hydraulic simulation.
+        const affectedLinkId =
+          scenarioKey === 'J4'
+            ? 'P7'
+            : scenarioKey === 'J6'
+              ? 'P2'
+              : null;
 
-    const scenarios = [
-      {
-        key: 'J4',
-        title: 'J4 DISRUPTION',
-        node: j4Node,
-        pipe: j4Pipe
-      },
-      {
-        key: 'J6',
-        title: 'J6 DISRUPTION',
-        node: j6Node,
-        pipe: j6Pipe
-      }
+        const affectedPipe =
+          affectedLinkId &&
+          Array.isArray(comparison.pipes)
+            ? comparison.pipes.find(
+              item =>
+                String(item && item.id || '').toUpperCase() ===
+                affectedLinkId
+            ) || { id: affectedLinkId }
+            : null;
+
+        const flowPipe =
+          Array.isArray(comparison.pipes) &&
+            comparison.pipes.length
+            ? comparison.pipes
+              .slice()
+              .sort(
+                (a, b) =>
+                  Math.abs(
+                    this.number(b && b.delta)
+                  ) -
+                  Math.abs(
+                    this.number(a && a.delta)
+                  )
+              )[0]
+            : null;
+
+        const pressureDelta =
+          node
+            ? this.number(node.delta)
+            : 0;
+
+        const flowDelta =
+          flowPipe
+            ? this.number(flowPipe.delta)
+            : 0;
+
+        let severity = 'MONITOR';
+
+        if (pressureDelta <= -0.50) {
+          severity = 'CRITICAL';
+        } else if (pressureDelta < -0.10) {
+          severity = 'WARNING';
+        } else if (pressureDelta > 0.10) {
+          severity = 'RESPONSE';
+        }
+
+        return {
+          scenarioKey,
+          title:
+            scenarioKey === 'J4'
+              ? 'J4 DISRUPTION'
+              : 'J6 DISRUPTION',
+          node,
+          pipe: affectedPipe,
+          pressureDelta,
+          flowDelta,
+          severity
+        };
+
+      };
+
+    const events = [
+      buildEvent(
+        state.j4,
+        'J4',
+        'J4'
+      ),
+      buildEvent(
+        state.j6,
+        'J6',
+        'J6'
+      )
     ];
 
-    const totalPressureChange =
-      scenarios.filter(
-        item =>
-          item.node
+    const warningCount =
+      events.filter(
+        event =>
+          event.severity === 'WARNING' ||
+          event.severity === 'CRITICAL'
       ).length;
+
+    const statusClass =
+      severity => {
+
+        if (severity === 'CRITICAL') {
+          return 'hc-alert-status-critical';
+        }
+
+        if (severity === 'WARNING') {
+          return 'hc-alert-status-warning';
+        }
+
+        if (severity === 'RESPONSE') {
+          return 'hc-alert-status-response';
+        }
+
+        return 'hc-alert-status-monitor';
+
+      };
 
     return `
 
-      <div class="hc-modern-module-content">
+      <div class="hc-modern-module-content hc-alerts-modern">
 
-        <div class="hc-modern-toolbar">
+        <div class="dash-card">
 
-          <div>
+          <div class="dash-card-header">
 
-            <div class="analytics-section-label">
-              OPERATIONAL ALERT ENGINE
+            <div class="dash-card-title-wrap">
+
+              <div class="icon-box">
+                ${this.icon(
+                  'alertCircle',
+                  'icon'
+                )}
+              </div>
+
+              <div>
+                <h2 class="dash-card-title">
+                  Operational Alerts
+                </h2>
+
+                <p class="dash-card-subtitle">
+                  Hydraulic scenario event advisories
+                </p>
+              </div>
+
             </div>
 
-            <div class="hc-modern-toolbar-title">
-              Hydraulic Event Advisories
-            </div>
+            <div class="hc-alert-mode-badge">
 
-            <div class="hc-modern-toolbar-subtitle">
-              Scenario-derived alerts highlighting the strongest
-              modeled hydraulic deviations from baseline.
+              <span class="hc-alert-mode-dot"></span>
+
+              <div>
+                <strong>ADVISORY MODE</strong>
+                <span>EPANET / WNTR · NOT LIVE SCADA</span>
+              </div>
+
             </div>
 
           </div>
 
-          <button
-            class="btn btn-secondary btn-sm"
-            onclick="
-              DashboardMunicipalView.loadAlerts();
-            "
-          >
-            ${this.icon('refresh', 'icon')}
-            Refresh Analysis
-          </button>
+          <div class="dash-card-body">
 
-        </div>
+            <div class="hc-alert-overview-row">
 
+              <div class="hc-alert-overview-copy">
 
-        <div class="analytics-engine-kpi-grid hc-modern-kpi-grid">
+                <div class="analytics-section-label">
+                  OPERATIONAL ALERT ENGINE
+                </div>
 
-          ${this.renderModernMetric(
-      'ADVISORY EVENTS',
-      '2',
-      '',
-      'alertCircle',
-      'warning',
-      'J4 and J6 scenarios'
-    )}
+                <div class="hc-modern-toolbar-title">
+                  Hydraulic Event Advisories
+                </div>
 
-          ${this.renderModernMetric(
-      'J4 PRESSURE Δ',
-      j4Node
-        ? this.signed(
-          j4Node.delta
-        )
-        : '0.00',
-      'm',
-      'gauge',
-      'warning',
-      j4Node
-        ? `Largest at ${j4Node.id}`
-        : 'No change'
-    )}
+                <div class="hc-modern-toolbar-subtitle">
+                  Scenario-derived deviations for the configured J4 and
+                  J6 disruption points.
+                </div>
 
-          ${this.renderModernMetric(
-      'J6 PRESSURE Δ',
-      j6Node
-        ? this.signed(
-          j6Node.delta
-        )
-        : '0.00',
-      'm',
-      'gauge',
-      'warning',
-      j6Node
-        ? `Largest at ${j6Node.id}`
-        : 'No change'
-    )}
+              </div>
 
-          ${this.renderModernMetric(
-      'MONITORING MODE',
-      'ADVISORY',
-      '',
-      'shield',
-      'info',
-      'Model-derived event layer'
-    )}
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm hc-alert-refresh"
+                onclick="DashboardMunicipalView.loadAlerts();"
+              >
+                ${this.icon('refresh', 'icon')}
+                Refresh Analysis
+              </button>
 
-        </div>
-
-
-        <div class="hc-modern-section-heading">
-
-          <div>
-
-            <div class="analytics-section-label">
-              EVENT DISPATCH
             </div>
 
-            <h3>
-              Active Hydraulic Advisories
-            </h3>
+            <div class="hc-alert-summary-grid">
 
-            <p>
-              Each advisory summarizes the strongest pressure and
-              flow divergence detected in its disruption scenario.
-            </p>
+              <div class="hc-alert-summary-card">
+                <div class="hc-alert-summary-icon">
+                  ${this.icon('alertCircle', 'icon')}
+                </div>
+                <div class="hc-alert-summary-copy">
+                  <span>EVENT SCENARIOS</span>
+                  <strong>${events.length}</strong>
+                  <small>Configured J4 + J6 disruptions</small>
+                </div>
+              </div>
 
-          </div>
+              <div class="hc-alert-summary-card ${warningCount ? 'is-warning' : ''}">
+                <div class="hc-alert-summary-icon">
+                  ${this.icon('gauge', 'icon')}
+                </div>
+                <div class="hc-alert-summary-copy">
+                  <span>PRESSURE WARNINGS</span>
+                  <strong>${warningCount}</strong>
+                  <small>${warningCount ? 'Modeled pressure response detected' : 'No warning-level response'}</small>
+                </div>
+              </div>
 
-          <span class="analytics-engine-unit">
-            ${totalPressureChange} SCENARIOS WITH SIGNALS
-          </span>
+              <div class="hc-alert-summary-card">
+                <div class="hc-alert-summary-icon">
+                  ${this.icon('activity', 'icon')}
+                </div>
+                <div class="hc-alert-summary-copy">
+                  <span>FIELD TELEMETRY</span>
+                  <strong>OFFLINE</strong>
+                  <small>ESP32 pressure + flow integration pending</small>
+                </div>
+              </div>
 
-        </div>
+            </div>
 
+            <div class="hc-alert-dispatch-heading">
 
-        <div class="hc-alert-grid">
+              <div>
+                <div class="analytics-section-label">EVENT DISPATCH VIEW</div>
+                <h3>Scenario Advisories</h3>
+              </div>
 
-          ${scenarios.map(
-      alert => {
+              <span class="hc-alert-dispatch-count">
+                ${events.length} ACTIVE SCENARIOS
+              </span>
 
-        const nodeDelta =
-          alert.node
-            ? this.number(
-              alert.node.delta
-            )
-            : 0;
+            </div>
 
-        const pipeDelta =
-          alert.pipe
-            ? this.number(
-              alert.pipe.delta
-            )
-            : 0;
+            <div class="hc-alert-grid">
 
-        return `
+              ${events.map(
+                event => `
 
-                <article class="analytics-engine-card hc-alert-card">
+                  <article
+                    class="analytics-engine-card hc-alert-card hc-alert-event-card"
+                  >
 
-                  <div class="hc-alert-card-top">
+                    <div class="hc-alert-card-top">
 
-                    <div>
+                      <div class="hc-alert-title-block">
 
-                      <div class="hc-alert-eyebrow">
-                        ${this.escapeHtml(
-          alert.key
-        )} · HYDRAULIC EVENT
+                        <div class="hc-alert-eyebrow">
+                          ${this.escapeHtml(event.scenarioKey)}
+                          · HYDRAULIC EVENT
+                        </div>
+
+                        <div class="hc-alert-title">
+                          ${this.escapeHtml(event.title)}
+                        </div>
+
                       </div>
 
-                      <h3 class="hc-alert-title">
-                        ${this.escapeHtml(
-          alert.title
-        )}
-                      </h3>
+                      <span
+                        class="hc-alert-badge ${statusClass(event.severity)}"
+                      >
+                        ${this.escapeHtml(event.severity)}
+                      </span>
 
                     </div>
 
-                    <span class="hc-alert-badge">
-                      ADVISORY
-                    </span>
+                    <div class="hc-alert-primary">
 
-                  </div>
+                      <div class="hc-alert-primary-block">
 
+                        <div class="hc-alert-metric-label">
+                          PRESSURE RESPONSE
+                        </div>
 
-                  <div class="hc-alert-primary">
+                        <div class="hc-alert-primary-value">
+                          ${this.signed(event.pressureDelta)}
+                          <span>m</span>
+                        </div>
 
-                    <div>
+                        <div class="hc-alert-primary-meta">
+                          Change at the configured disruption junction
+                          relative to the baseline hydraulic state.
+                        </div>
 
-                      <div class="hc-alert-metric-label">
-                        PRESSURE RESPONSE
                       </div>
 
-                      <div class="hc-alert-primary-value">
-                        ${alert.node
-            ? this.signed(
-              nodeDelta
-            )
-            : '0.00'
-          }
-                        <span>m</span>
+                      <div class="hc-alert-node-block">
+
+                        <div class="hc-alert-metric-label">
+                          AFFECTED JUNCTION
+                        </div>
+
+                        <strong class="hc-alert-node-value">
+                          ${this.escapeHtml(
+                            event.node
+                              ? event.node.id
+                              : event.scenarioKey
+                          )}
+                        </strong>
+
+                        <span class="hc-alert-node-caption">
+                          Scenario target
+                        </span>
+
                       </div>
 
                     </div>
 
-                    <div class="hc-alert-node">
+                    <div class="hc-alert-detail-grid">
 
-                      <div class="hc-alert-metric-label">
-                        AFFECTED NODE
+                      <div class="hc-alert-detail">
+                        <span>FLOW RESPONSE</span>
+                        <strong class="hc-alert-flow-value">
+                          ${this.signed(event.flowDelta)} L/s
+                        </strong>
                       </div>
 
-                      <strong>
-                        ${alert.node
-            ? this.escapeHtml(
-              alert.node.id
-            )
-            : '—'
-          }
-                      </strong>
+                      <div class="hc-alert-detail">
+                        <span>AFFECTED LINK</span>
+                        <strong>
+                          ${event.pipe
+                            ? this.escapeHtml(event.pipe.id)
+                            : '—'}
+                        </strong>
+                      </div>
+
+                      <div class="hc-alert-detail">
+                        <span>EVENT SOURCE</span>
+                        <strong>EPANET / WNTR</strong>
+                      </div>
+
+                      <div class="hc-alert-detail">
+                        <span>FIELD TELEMETRY</span>
+                        <strong>NOT CONNECTED</strong>
+                      </div>
 
                     </div>
 
-                  </div>
-
-
-                  <div class="hc-alert-detail-grid">
-
-                    <div class="hc-alert-detail">
+                    <div class="hc-alert-footer">
 
                       <span>
-                        BASELINE PRESSURE
+                        ${this.icon('info', 'icon')}
+                        MODEL-DERIVED ADVISORY
                       </span>
-
-                      <strong>
-                        ${alert.node
-            ? `${this.format(
-              alert.node.baseline
-            )} m`
-            : '—'
-          }
-                      </strong>
-
-                    </div>
-
-                    <div class="hc-alert-detail">
 
                       <span>
-                        CURRENT PRESSURE
+                        ${this.escapeHtml(event.scenarioKey)} SCENARIO
                       </span>
-
-                      <strong>
-                        ${alert.node
-            ? `${this.format(
-              alert.node.current
-            )} m`
-            : '—'
-          }
-                      </strong>
 
                     </div>
 
-                    <div class="hc-alert-detail">
+                  </article>
 
-                      <span>
-                        AFFECTED PIPE
-                      </span>
+                `
+              ).join('')}
 
-                      <strong class="font-mono">
-                        ${alert.pipe
-            ? this.escapeHtml(
-              alert.pipe.id
-            )
-            : '—'
-          }
-                      </strong>
+            </div>
 
-                    </div>
+            <div class="hc-alert-boundary">
 
-                    <div class="hc-alert-detail">
+              <div class="hc-alert-boundary-left">
+                ${this.icon('shield', 'icon')}
+                <strong>MODEL-DERIVED ADVISORY</strong>
+              </div>
 
-                      <span>
-                        FLOW Δ
-                      </span>
+              <span>
+                Scenario output only · live field telemetry is not connected.
+              </span>
 
-                      <strong>
-                        ${alert.pipe
-            ? `${this.signed(
-              pipeDelta
-            )} L/s`
-            : '—'
-          }
-                      </strong>
-
-                    </div>
-
-                  </div>
-
-
-                  <div class="hc-alert-footer">
-
-                    <span>
-                      ${this.icon(
-            'info',
-            'icon'
-          )}
-                      Model-derived advisory
-                    </span>
-
-                    <span>
-                      Baseline comparison
-                    </span>
-
-                  </div>
-
-                </article>
-
-              `;
-
-      }
-    ).join('')}
-
-        </div>
-
-
-        <div class="hc-modern-source-strip">
-
-          <div class="hc-modern-source-icon">
-            ${this.icon('shield', 'icon')}
-          </div>
-
-          <div>
-
-            <strong>
-              Advisory classification
-            </strong>
-
-            <span>
-              These events are generated from hydraulic scenario
-              divergence and are not live SCADA alarms or confirmed
-              field incidents.
-            </span>
+            </div>
 
           </div>
 
@@ -12001,7 +12439,6 @@ console.log(
     `;
 
   };
-
 
   /* ==========================================================
      DIGITAL TWIN VISUAL INTEGRATION
@@ -12041,20 +12478,14 @@ console.log(
           s.network || {};
 
         const nodes =
-          Array.isArray(
-            network.nodes
-          )
+          Array.isArray(network.nodes)
             ? network.nodes
             : [];
 
         const pipes =
-          Array.isArray(
-            network.pipes
-          )
+          Array.isArray(network.pipes)
             ? network.pipes
-            : Array.isArray(
-              network.links
-            )
+            : Array.isArray(network.links)
               ? network.links
               : [];
 
@@ -12063,15 +12494,24 @@ console.log(
             ? 'CONNECTED'
             : 'MODEL';
 
+        const scenario =
+          s.scenario || 'baseline';
+
         const scenarioLabel =
           (
             DigitalTwinView.scenarioLabels &&
-            DigitalTwinView.scenarioLabels[
-            s.scenario
-            ]
+            DigitalTwinView.scenarioLabels[scenario]
           ) ||
-          s.scenario ||
-          'Baseline Network Operation';
+          scenario.replace(/_/g, ' ').toUpperCase();
+
+        const scenarioStatus =
+          s.loading
+            ? 'LOADING'
+            : s.error
+              ? 'ATTENTION'
+              : scenario === 'baseline'
+                ? 'NORMAL'
+                : 'SCENARIO';
 
         let original;
 
@@ -12080,15 +12520,21 @@ console.log(
             originalRender();
         } catch (error) {
           original = `
-            <div class="error-state-card">
-              <h3>
-                Digital Twin Data Unavailable
-              </h3>
-              <p class="text-xs text-secondary">
-                ${DM.escapeHtml(
-            error.message
-          )}
+            <div class="hc-dt-state-card">
+              <div class="hc-dt-state-icon">
+                ${DM.icon('alertCircle', 'icon')}
+              </div>
+              <h3>Digital Twin Data Unavailable</h3>
+              <p>
+                ${DM.escapeHtml(error.message)}
               </p>
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                onclick="DigitalTwinView.load('${DM.escapeHtml(scenario)}')"
+              >
+                Retry
+              </button>
             </div>
           `;
         }
@@ -12097,60 +12543,189 @@ console.log(
 
           <div class="hc-digital-twin-modern">
 
-            <div class="analytics-engine-kpi-grid hc-modern-kpi-grid">
+            <section class="hc-dt-hero">
 
-              ${DM.renderModernMetric(
-          'NETWORK NODES',
-          String(nodes.length),
-          '',
-          'network',
-          'normal',
-          'Modeled junctions'
-        )}
+              <div class="hc-dt-hero-main">
 
-              ${DM.renderModernMetric(
-          'NETWORK LINKS',
-          String(pipes.length),
-          '',
-          'flow',
-          'normal',
-          'Modeled hydraulic pipes'
-        )}
+                <div class="hc-dt-hero-icon">
+                  ${DM.icon('map', 'icon')}
+                </div>
 
-              ${DM.renderModernMetric(
-          'ACTIVE SCENARIO',
-          String(
-            s.scenario || 'baseline'
-          ).replace(
-            '_',
-            ' '
-          ).toUpperCase(),
-          '',
-          'simulate',
-          s.scenario === 'baseline'
-            ? 'normal'
-            : 'warning',
-          scenarioLabel
-        )}
+                <div class="hc-dt-hero-copy">
 
-              ${DM.renderModernMetric(
-          'MODEL STATUS',
-          s.loading
-            ? 'LOADING'
-            : source,
-          '',
-          'checkCircle',
-          s.error
-            ? 'critical'
-            : 'normal',
-          s.error
-            ? 'Attention required'
-            : 'Geographic + hydraulic model'
-        )}
+                  <div class="analytics-section-label">
+                    GEOGRAPHIC DIGITAL TWIN
+                  </div>
 
-            </div>
+                  <h2>
+                    Sadashiv Nagar Digital Twin
+                  </h2>
 
-            <div class="hc-modern-section-heading">
+                  <p>
+                    Interactive 3D network view combining mapped infrastructure
+                    with EPANET/WNTR scenario state.
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div class="hc-dt-hero-meta">
+
+                <span class="hc-dt-live-badge">
+                  <span></span>
+                  ${DM.escapeHtml(scenarioStatus)}
+                </span>
+
+                <span class="hc-dt-hero-context">
+                  3D TERRAIN · DMA MODEL
+                </span>
+
+              </div>
+
+            </section>
+
+
+            <section class="hc-dt-command">
+
+              <div class="hc-dt-command-copy">
+
+                <div class="analytics-section-label">
+                  SCENARIO CONTROL
+                </div>
+
+                <strong>
+                  ${DM.escapeHtml(scenarioLabel)}
+                </strong>
+
+                <span>
+                  Change the hydraulic scenario shown on the geographic model.
+                </span>
+
+              </div>
+
+              <div class="hc-dt-command-actions">
+
+                ${DM.modernScenarioControls(
+                  scenario,
+                  'switchDigitalTwinScenario'
+                )}
+
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm hc-dt-refresh"
+                  onclick="DigitalTwinView.load('${DM.escapeHtml(scenario)}')"
+                  title="Reload digital twin network"
+                >
+                  ${DM.icon('refresh', 'icon')}
+                  Refresh
+                </button>
+
+              </div>
+
+            </section>
+
+
+            <section class="hc-dt-kpis">
+
+              <div class="hc-dt-kpi">
+
+                <div class="hc-dt-kpi-label">
+                  NETWORK NODES
+                </div>
+
+                <div class="hc-dt-kpi-row">
+                  <strong>${DM.escapeHtml(String(nodes.length))}</strong>
+                  <span class="hc-dt-kpi-icon">
+                    ${DM.icon('map', 'icon')}
+                  </span>
+                </div>
+
+                <span class="hc-dt-kpi-note">
+                  Mapped junctions
+                </span>
+
+              </div>
+
+
+              <div class="hc-dt-kpi">
+
+                <div class="hc-dt-kpi-label">
+                  NETWORK LINKS
+                </div>
+
+                <div class="hc-dt-kpi-row">
+                  <strong>${DM.escapeHtml(String(pipes.length))}</strong>
+                  <span class="hc-dt-kpi-icon">
+                    ${DM.icon('pipeline', 'icon')}
+                  </span>
+                </div>
+
+                <span class="hc-dt-kpi-note">
+                  Mapped hydraulic pipes
+                </span>
+
+              </div>
+
+
+              <div class="hc-dt-kpi">
+
+                <div class="hc-dt-kpi-label">
+                  ACTIVE SCENARIO
+                </div>
+
+                <div class="hc-dt-kpi-row">
+                  <strong class="hc-dt-kpi-scenario">
+                    ${DM.escapeHtml(
+                      scenario.replace(/_/g, ' ').toUpperCase()
+                    )}
+                  </strong>
+                  <span class="hc-dt-kpi-icon">
+                    ${DM.icon('simulate', 'icon')}
+                  </span>
+                </div>
+
+                <span class="hc-dt-kpi-note">
+                  ${DM.escapeHtml(scenarioLabel)}
+                </span>
+
+              </div>
+
+
+              <div class="hc-dt-kpi">
+
+                <div class="hc-dt-kpi-label">
+                  MODEL STATUS
+                </div>
+
+                <div class="hc-dt-kpi-row">
+                  <strong class="${s.error ? 'hc-dt-kpi-error' : ''}">
+                    ${DM.escapeHtml(
+                      s.loading
+                        ? 'LOADING'
+                        : source
+                    )}
+                  </strong>
+                  <span class="hc-dt-kpi-icon">
+                    ${DM.icon(
+                      s.error ? 'alertCircle' : 'activity',
+                      'icon'
+                    )}
+                  </span>
+                </div>
+
+                <span class="hc-dt-kpi-note">
+                  ${s.error
+                    ? 'Model requires attention'
+                    : 'Geographic + hydraulic model'}
+                </span>
+
+              </div>
+
+            </section>
+
+
+            <section class="hc-dt-workspace-heading">
 
               <div>
 
@@ -12163,27 +12738,46 @@ console.log(
                 </h3>
 
                 <p>
-                  Interactive network visualization with scenario
-                  context and selected-element inspection.
+                  Inspect the 3D network and select a junction to view its
+                  hydraulic state.
                 </p>
 
               </div>
 
-              <span class="analytics-engine-unit">
+              <span class="hc-dt-scenario-badge">
                 ${DM.escapeHtml(
-          String(
-            s.scenario || 'baseline'
-          ).replace(
-            '_',
-            ' '
-          ).toUpperCase()
-        )}
+                  scenario.replace(/_/g, ' ').toUpperCase()
+                )}
               </span>
 
-            </div>
+            </section>
+
 
             <div class="hc-dt-original-wrap">
               ${original}
+            </div>
+
+
+            <div class="hc-dt-source-strip">
+
+              <div class="hc-dt-source-icon">
+                ${DM.icon('checkCircle', 'icon')}
+              </div>
+
+              <div>
+                <strong>
+                  DIGITAL TWIN DATA PIPELINE
+                </strong>
+                <span>
+                  Geographic geometry from the project mapping layer ·
+                  hydraulic scenario values from EPANET/WNTR.
+                </span>
+              </div>
+
+              <span class="hc-dt-source-state">
+                ${DM.escapeHtml(source)}
+              </span>
+
             </div>
 
           </div>
@@ -12191,7 +12785,6 @@ console.log(
         `;
 
       };
-
     DigitalTwinView.__hydroModernRenderInstalled =
       true;
 
@@ -12670,17 +13263,227 @@ console.log(
       }
 
 
+      .hc-alerts-modern {
+        width:100%;
+      }
+
+
+      .hc-alert-overview-row {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:18px;
+        margin-bottom:14px;
+        padding:4px 2px 0;
+      }
+
+
+      .hc-alert-overview-copy {
+        min-width:0;
+      }
+
+
+      .hc-alert-refresh {
+        flex-shrink:0;
+        white-space:nowrap;
+      }
+
+
+      .hc-alert-mode-badge {
+        display:flex;
+        align-items:center;
+        gap:9px;
+        flex-shrink:0;
+        min-width:190px;
+        padding:8px 11px;
+        border:1px solid rgba(92,210,255,.10);
+        border-radius:8px;
+        background:rgba(7,24,43,.58);
+      }
+
+
+      .hc-alert-mode-dot {
+        width:7px;
+        height:7px;
+        flex-shrink:0;
+        border-radius:50%;
+        background:#83d8ad;
+        box-shadow:0 0 9px rgba(131,216,173,.38);
+      }
+
+
+      .hc-alert-mode-badge strong {
+        display:block;
+        color:#cfe8f7;
+        font-family:monospace;
+        font-size:8px;
+        letter-spacing:.09em;
+      }
+
+
+      .hc-alert-mode-badge span:not(.hc-alert-mode-dot) {
+        display:block;
+        margin-top:2px;
+        color:#536b82;
+        font-family:monospace;
+        font-size:6px;
+        letter-spacing:.06em;
+      }
+
+
+      .hc-alert-summary-grid {
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:10px;
+        margin-bottom:22px;
+      }
+
+
+      .hc-alert-summary-card {
+        display:flex;
+        align-items:center;
+        gap:12px;
+        min-width:0;
+        min-height:78px;
+        padding:12px 14px;
+        border:1px solid rgba(92,210,255,.09);
+        border-radius:10px;
+        background:linear-gradient(145deg,rgba(18,48,76,.70),rgba(8,27,48,.84));
+      }
+
+
+      .hc-alert-summary-card.is-warning {
+        border-color:rgba(255,184,107,.14);
+      }
+
+
+      .hc-alert-summary-icon {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:31px;
+        height:31px;
+        flex-shrink:0;
+        border:1px solid rgba(92,210,255,.11);
+        border-radius:8px;
+        color:#73d9ff;
+        background:rgba(53,208,255,.055);
+      }
+
+
+      .hc-alert-summary-card.is-warning .hc-alert-summary-icon {
+        color:#ffbe78;
+        border-color:rgba(255,184,107,.16);
+        background:rgba(255,184,107,.06);
+      }
+
+
+      .hc-alert-summary-icon .icon {
+        width:15px;
+        height:15px;
+      }
+
+
+      .hc-alert-summary-copy {
+        min-width:0;
+      }
+
+
+      .hc-alert-summary-copy span {
+        display:block;
+        color:#71869e;
+        font-family:monospace;
+        font-size:7px;
+        font-weight:600;
+        letter-spacing:.09em;
+      }
+
+
+      .hc-alert-summary-copy strong {
+        display:block;
+        margin-top:4px;
+        color:#e3f3ff;
+        font-family:monospace;
+        font-size:21px;
+        line-height:1;
+      }
+
+
+      .hc-alert-summary-copy small {
+        display:block;
+        margin-top:4px;
+        overflow:hidden;
+        color:#536b82;
+        font-size:7px;
+        line-height:1.35;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+
+
+      .hc-alert-dispatch-heading {
+        display:flex;
+        align-items:flex-end;
+        justify-content:space-between;
+        gap:14px;
+        margin:2px 0 10px;
+        padding-top:2px;
+      }
+
+
+      .hc-alert-dispatch-heading h3 {
+        margin:4px 0 0;
+        color:#dbeafe;
+        font-size:14px;
+        font-weight:700;
+      }
+
+
+      .hc-alert-dispatch-count {
+        flex-shrink:0;
+        color:#536b82;
+        font-family:monospace;
+        font-size:7px;
+        letter-spacing:.08em;
+      }
+
+
       .hc-alert-grid {
         display:grid;
         grid-template-columns:
           repeat(2,minmax(0,1fr));
-        gap:12px;
+        gap:14px;
       }
 
 
       .hc-alert-card {
         min-width:0;
         padding:0;
+        overflow:hidden;
+        border-radius:14px;
+        border-color:rgba(255,184,107,.13);
+        background:
+          linear-gradient(
+            145deg,
+            rgba(14,37,62,.88),
+            rgba(7,24,43,.94)
+          );
+      }
+
+
+      .hc-alert-event-card {
+        transition:
+          transform .18s ease,
+          border-color .18s ease,
+          box-shadow .18s ease;
+      }
+
+
+      .hc-alert-event-card:hover {
+        transform:translateY(-2px);
+        border-color:rgba(255,184,107,.25);
+        box-shadow:
+          0 16px 34px rgba(0,0,0,.18);
       }
 
 
@@ -12688,11 +13491,16 @@ console.log(
         display:flex;
         align-items:flex-start;
         justify-content:space-between;
-        gap:12px;
-        padding:16px 17px 12px;
+        gap:14px;
+        padding:18px 18px 14px;
         border-bottom:
           1px solid
-          rgba(255,184,107,.07);
+          rgba(255,184,107,.08);
+      }
+
+
+      .hc-alert-title-block {
+        min-width:0;
       }
 
 
@@ -12700,43 +13508,80 @@ console.log(
         color:#71869e;
         font-family:monospace;
         font-size:7px;
-        letter-spacing:.12em;
+        letter-spacing:.13em;
       }
 
 
       .hc-alert-title {
-        margin:5px 0 0;
-        color:#dbeafe;
-        font-size:13px;
+        margin:6px 0 0;
+        color:#e5f3ff;
+        font-size:15px;
         font-weight:700;
+        line-height:1.2;
+      }
+
+
+      .hc-alert-status-critical {
+        color:#ff7777;
+        border-color:rgba(239,68,68,.24);
+        background:rgba(239,68,68,.08);
+      }
+
+
+      .hc-alert-status-warning {
+        color:#ffbe78;
+        border-color:rgba(255,184,107,.24);
+        background:rgba(255,184,107,.08);
+      }
+
+
+      .hc-alert-status-response {
+        color:#9edfff;
+        border-color:rgba(92,210,255,.20);
+        background:rgba(92,210,255,.07);
+      }
+
+
+      .hc-alert-status-monitor {
+        color:#83d8ad;
+        border-color:rgba(131,216,173,.20);
+        background:rgba(131,216,173,.06);
       }
 
 
       .hc-alert-badge {
         flex-shrink:0;
-        padding:5px 7px;
+        padding:6px 8px;
         border:
           1px solid
-          rgba(255,184,107,.18);
-        border-radius:5px;
+          rgba(255,184,107,.20);
+        border-radius:6px;
         color:#ffbe78;
         background:
           rgba(255,184,107,.07);
         font-family:monospace;
         font-size:7px;
-        letter-spacing:.08em;
+        font-weight:700;
+        letter-spacing:.09em;
       }
 
 
       .hc-alert-primary {
         display:grid;
         grid-template-columns:
-          1fr .8fr;
-        gap:12px;
-        padding:16px 17px;
+          minmax(0,1.15fr)
+          minmax(120px,.85fr);
+        gap:16px;
+        padding:18px;
         border-bottom:
           1px solid
           rgba(92,210,255,.06);
+      }
+
+
+      .hc-alert-primary-block,
+      .hc-alert-node-block {
+        min-width:0;
       }
 
 
@@ -12744,33 +13589,64 @@ console.log(
         color:#71869e;
         font-family:monospace;
         font-size:7px;
+        font-weight:600;
         letter-spacing:.10em;
       }
 
 
       .hc-alert-primary-value {
-        margin-top:5px;
+        margin-top:7px;
         color:#ffbe78;
         font-family:monospace;
-        font-size:25px;
+        font-size:30px;
+        font-weight:700;
+        line-height:1;
+        letter-spacing:-.03em;
+      }
+
+
+      .hc-alert-primary-value span {
+        margin-left:3px;
+        color:#71869e;
+        font-size:11px;
+        font-weight:500;
+        letter-spacing:0;
+      }
+
+
+      .hc-alert-primary-meta {
+        margin-top:7px;
+        color:#536b82;
+        font-size:8px;
+        line-height:1.4;
+      }
+
+
+      .hc-alert-node-block {
+        padding-left:14px;
+        border-left:
+          1px solid
+          rgba(92,210,255,.07);
+      }
+
+
+      .hc-alert-node-value {
+        display:block;
+        margin-top:9px;
+        color:#dbeafe;
+        font-family:monospace;
+        font-size:20px;
         font-weight:700;
         line-height:1;
       }
 
 
-      .hc-alert-primary-value span {
-        color:#71869e;
-        font-size:9px;
-        font-weight:500;
-      }
-
-
-      .hc-alert-node strong {
+      .hc-alert-node-caption {
         display:block;
-        margin-top:8px;
-        color:#dbeafe;
-        font-family:monospace;
-        font-size:15px;
+        margin-top:7px;
+        color:#536b82;
+        font-size:8px;
+        line-height:1.4;
       }
 
 
@@ -12786,7 +13662,8 @@ console.log(
 
       .hc-alert-detail {
         min-width:0;
-        padding:11px 13px;
+        min-height:58px;
+        padding:12px 14px;
         background:
           rgba(7,24,43,.64);
       }
@@ -12797,16 +13674,23 @@ console.log(
         color:#536b82;
         font-family:monospace;
         font-size:7px;
+        font-weight:600;
         letter-spacing:.08em;
       }
 
 
       .hc-alert-detail strong {
         display:block;
-        margin-top:4px;
-        color:#bcd3e7;
+        margin-top:5px;
+        color:#c5d9e9;
         font-family:monospace;
-        font-size:9px;
+        font-size:10px;
+        font-weight:700;
+      }
+
+
+      .hc-alert-flow-value {
+        color:#9edfff !important;
       }
 
 
@@ -12814,8 +13698,8 @@ console.log(
         display:flex;
         align-items:center;
         justify-content:space-between;
-        gap:8px;
-        padding:10px 13px;
+        gap:10px;
+        padding:11px 14px;
         color:#536b82;
         font-family:monospace;
         font-size:7px;
@@ -12835,8 +13719,239 @@ console.log(
       }
 
 
+      .hc-alert-boundary {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        margin-top:16px;
+        padding:9px 12px;
+        border:1px solid rgba(92,210,255,.07);
+        border-radius:8px;
+        background:rgba(7,24,43,.45);
+      }
+
+
+      .hc-alert-boundary-left {
+        display:flex;
+        align-items:center;
+        gap:6px;
+        flex-shrink:0;
+      }
+
+
+      .hc-alert-boundary-left .icon {
+        width:11px;
+        height:11px;
+        color:#73d9ff;
+      }
+
+
+      .hc-alert-boundary-left strong {
+        color:#8fb2c9;
+        font-family:monospace;
+        font-size:7px;
+        letter-spacing:.08em;
+      }
+
+
+      .hc-alert-boundary > span {
+        color:#536b82;
+        font-size:7px;
+        text-align:right;
+      }
+
+
+      /* ==========================================================
+         DIGITAL TWIN VISUAL SYSTEM
+         Scoped ONLY to the Digital Twin module.
+
+         The Digital Twin owns its own controls, map, details and
+         summary cards. This layer only makes those existing pieces
+         visually consistent with the municipal application.
+         ========================================================== */
+
       .hc-digital-twin-modern {
         width:100%;
+        box-sizing:border-box;
+      }
+
+
+      .hc-dt-header {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:20px;
+        min-height:84px;
+        box-sizing:border-box;
+        padding:18px 20px;
+        border:1px solid rgba(92,210,255,.10);
+        border-radius:8px;
+        background:rgba(16,43,71,.96);
+      }
+
+
+      .hc-dt-header-left {
+        display:flex;
+        align-items:center;
+        gap:12px;
+        min-width:0;
+      }
+
+
+      .hc-dt-header-icon {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        flex:0 0 32px;
+        width:32px;
+        height:32px;
+        box-sizing:border-box;
+        border:1px solid rgba(92,210,255,.12);
+        border-radius:8px;
+        color:#6fdcff;
+        background:rgba(53,208,255,.055);
+      }
+
+
+      .hc-dt-header-icon .icon {
+        width:15px;
+        height:15px;
+      }
+
+
+      .hc-dt-title {
+        margin:4px 0 0;
+        color:#dbeafe;
+        font-size:13px;
+        font-weight:600;
+        line-height:1.25;
+      }
+
+
+      .hc-dt-subtitle {
+        margin:5px 0 0;
+        max-width:680px;
+        color:#7f94ad;
+        font-size:10px;
+        line-height:1.45;
+      }
+
+
+      .hc-dt-status {
+        flex-shrink:0;
+        padding:4px 7px;
+        border:1px solid rgba(92,210,255,.12);
+        border-radius:5px;
+        color:#5ee7ff;
+        background:rgba(53,208,255,.045);
+        font-family:monospace;
+        font-size:8px;
+        letter-spacing:.05em;
+      }
+
+
+      .hc-dt-control {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:18px;
+        box-sizing:border-box;
+        margin:14px 0 0;
+        padding:15px 17px;
+        border:1px solid rgba(92,210,255,.08);
+        border-radius:9px;
+        background:linear-gradient(
+          145deg,
+          rgba(14,37,62,.72),
+          rgba(7,24,43,.82)
+        );
+      }
+
+
+      .hc-dt-control-copy {
+        min-width:0;
+      }
+
+
+      .hc-dt-control-title {
+        margin-top:4px;
+        color:#dbeafe;
+        font-size:13px;
+        font-weight:600;
+        line-height:1.3;
+      }
+
+
+      .hc-dt-control-copy p {
+        margin:5px 0 0;
+        max-width:620px;
+        color:#71869e;
+        font-size:9px;
+        line-height:1.5;
+      }
+
+
+      .hc-dt-control-actions {
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+        gap:8px;
+        flex-shrink:0;
+        flex-wrap:wrap;
+      }
+
+
+      .hc-dt-refresh {
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+      }
+
+
+      .hc-dt-refresh .icon {
+        width:12px;
+        height:12px;
+      }
+
+
+      .hc-dt-kpi-grid {
+        display:grid !important;
+        grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+        gap:10px;
+        box-sizing:border-box;
+        margin:14px 0 0;
+      }
+
+
+      .hc-dt-kpi-grid .analytics-engine-kpi {
+        min-width:0;
+      }
+
+
+      .hc-dt-section-heading {
+        display:flex;
+        align-items:flex-end;
+        justify-content:space-between;
+        gap:16px;
+        margin:20px 0 12px;
+      }
+
+
+      .hc-dt-section-heading h3 {
+        margin:4px 0 0;
+        color:#dbeafe;
+        font-size:13px;
+        font-weight:600;
+      }
+
+
+      .hc-dt-section-heading p {
+        margin:5px 0 0;
+        max-width:680px;
+        color:#71869e;
+        font-size:9px;
+        line-height:1.5;
       }
 
 
@@ -12845,44 +13960,20 @@ console.log(
       }
 
 
+      /* The legacy Digital Twin header is replaced by the modern header above. */
       .hc-dt-original-wrap .dt-header-card {
-        margin-top:0;
-        border:
-          1px solid
-          rgba(92,210,255,.10);
-        border-radius:10px;
-        background:
-          linear-gradient(
-            145deg,
-            rgba(16,39,64,.92),
-            rgba(7,24,43,.96)
-          );
-        box-shadow:
-          0 12px 30px rgba(0,0,0,.10);
+        display:none !important;
       }
 
 
       .hc-dt-original-wrap .dt-grid {
-        margin-top:12px;
+        margin-top:0;
       }
 
 
       .hc-dt-original-wrap .dash-card {
-        border-color:
-          rgba(92,210,255,.08);
-        border-radius:10px;
-      }
-
-
-      .hc-dt-original-wrap .dt-title {
-        color:#dbeafe;
-      }
-
-
-      .hc-dt-original-wrap .dt-eyebrow {
-        color:#71869e;
-        font-family:monospace;
-        letter-spacing:.12em;
+        border-color:rgba(92,210,255,.08);
+        border-radius:9px;
       }
 
 
@@ -12892,7 +13983,164 @@ console.log(
       }
 
 
+      .hc-dt-original-wrap .dt-map-card,
+      .hc-dt-original-wrap .dt-detail-card {
+        min-width:0;
+      }
+
+
+      .hc-dt-source-strip {
+        display:flex;
+        align-items:center;
+        gap:10px;
+        box-sizing:border-box;
+        margin-top:14px;
+        padding:11px 13px;
+        border:1px solid rgba(92,210,255,.08);
+        border-radius:8px;
+        background:rgba(7,24,43,.55);
+      }
+
+
+      .hc-dt-source-icon {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        flex:0 0 24px;
+        width:24px;
+        height:24px;
+        border:1px solid rgba(92,210,255,.10);
+        border-radius:6px;
+        color:#73d9ff;
+        background:rgba(53,208,255,.045);
+      }
+
+
+      .hc-dt-source-icon .icon {
+        width:12px;
+        height:12px;
+      }
+
+
+      .hc-dt-source-strip strong {
+        display:block;
+        color:#a9bfd4;
+        font-family:monospace;
+        font-size:8px;
+        letter-spacing:.05em;
+      }
+
+
+      .hc-dt-source-strip span {
+        display:block;
+        margin-top:3px;
+        color:#536b82;
+        font-size:8px;
+        line-height:1.45;
+      }
+
+
+      .hc-dt-state-card {
+        display:flex;
+        align-items:center;
+        flex-direction:column;
+        justify-content:center;
+        min-height:280px;
+        box-sizing:border-box;
+        padding:28px;
+        border:1px solid rgba(92,210,255,.08);
+        border-radius:9px;
+        background:rgba(7,24,43,.58);
+        text-align:center;
+      }
+
+
+      .hc-dt-state-icon {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:34px;
+        height:34px;
+        margin-bottom:12px;
+        border:1px solid rgba(239,68,68,.24);
+        border-radius:8px;
+        color:#ff7b87;
+        background:rgba(239,68,68,.05);
+      }
+
+
+      .hc-dt-state-icon .icon {
+        width:15px;
+        height:15px;
+      }
+
+
+      .hc-dt-state-card h3 {
+        margin:0;
+        color:#dbeafe;
+        font-size:13px;
+      }
+
+
+      .hc-dt-state-card p {
+        max-width:560px;
+        margin:7px 0 14px;
+        color:#71869e;
+        font-size:9px;
+        line-height:1.5;
+      }
+
+
       @media (max-width:900px) {
+
+        .hc-digital-twin-modern .dt-header-card {
+          align-items:flex-start;
+          flex-direction:column;
+        }
+
+        .hc-digital-twin-modern .dt-controls {
+          width:100%;
+          justify-content:flex-start;
+        }
+
+        .hc-digital-twin-modern .dt-grid {
+          grid-template-columns:1fr;
+        }
+
+        .hc-digital-twin-modern .dt-summary-grid {
+          grid-template-columns:repeat(2,minmax(0,1fr));
+        }
+
+      }
+
+
+      @media (max-width:900px) {
+
+        .hc-dt-header {
+          align-items:flex-start;
+          flex-direction:column;
+        }
+
+        .hc-dt-control {
+          align-items:flex-start;
+          flex-direction:column;
+        }
+
+        .hc-dt-control-actions {
+          width:100%;
+          justify-content:flex-start;
+        }
+
+        .hc-dt-kpi-grid {
+          grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+        }
+
+        .hc-dt-section-heading {
+          align-items:flex-start;
+          flex-direction:column;
+        }
+
+      
 
         .hc-modern-toolbar {
           align-items:flex-start;
@@ -12906,6 +14154,19 @@ console.log(
         .hc-modern-two-column,
         .hc-alert-grid {
           grid-template-columns:1fr;
+        }
+
+        .hc-alert-summary-grid {
+          grid-template-columns:1fr;
+        }
+
+        .hc-alert-mode-badge {
+          width:100%;
+        }
+
+        .hc-alert-overview-row {
+          align-items:flex-start;
+          flex-direction:column;
         }
 
       }
@@ -12927,6 +14188,30 @@ console.log(
           grid-template-columns:1fr;
         }
 
+        .hc-alert-dispatch-heading,
+        .hc-alert-boundary {
+          align-items:flex-start;
+          flex-direction:column;
+        }
+
+        .hc-alert-boundary > span {
+          text-align:left;
+        }
+
+        .hc-alert-node-block {
+          padding-left:0;
+          padding-top:12px;
+          border-left:0;
+          border-top:
+            1px solid
+            rgba(92,210,255,.07);
+        }
+
+        .hc-alert-refresh {
+          width:100%;
+          justify-content:center;
+        }
+
         .hc-residual-row {
           align-items:flex-start;
           flex-direction:column;
@@ -12940,11 +14225,1438 @@ console.log(
 
     `;
 
+
+
+    style.textContent += `
+
+      /* ==========================================================
+         HYDROCYBERNETICS — SIMULATION VISUAL SYSTEM
+         Scoped ONLY to the Hydraulic Simulation module.
+         ========================================================== */
+
+      .hc-simulation-modern {
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: 1px solid rgba(92, 210, 255, .10);
+        border-radius: 8px;
+        overflow: hidden;
+        background:
+          linear-gradient(
+            145deg,
+            #102b47 0%,
+            #0d263f 55%,
+            #0b2239 100%
+          );
+        box-shadow:
+          0 8px 24px rgba(0, 0, 0, .12);
+      }
+
+      .hc-simulation-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        min-height: 84px;
+        box-sizing: border-box;
+        padding: 18px 20px;
+        border-bottom: 1px solid rgba(92, 210, 255, .07);
+        background: rgba(16, 43, 71, .96);
+      }
+
+      .hc-simulation-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .hc-simulation-header-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 32px;
+        width: 32px;
+        height: 32px;
+        box-sizing: border-box;
+        border: 1px solid rgba(92, 210, 255, .12);
+        border-radius: 8px;
+        color: #6fdcff;
+        background: rgba(53, 208, 255, .055);
+      }
+
+      .hc-simulation-header-icon .icon {
+        width: 15px;
+        height: 15px;
+      }
+
+      .hc-simulation-title {
+        margin: 4px 0 0;
+        color: #dbeafe;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.25;
+      }
+
+      .hc-simulation-subtitle {
+        margin: 5px 0 0;
+        max-width: 680px;
+        color: #7f94ad;
+        font-size: 10px;
+        line-height: 1.45;
+      }
+
+      .hc-simulation-status {
+        flex-shrink: 0;
+        padding: 4px 7px;
+        border: 1px solid rgba(92, 210, 255, .12);
+        border-radius: 5px;
+        color: #5ee7ff;
+        background: rgba(53, 208, 255, .045);
+        font-family: monospace;
+        font-size: 8px;
+        letter-spacing: .05em;
+      }
+
+      .hc-simulation-control {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        box-sizing: border-box;
+        margin: 14px 14px 0;
+        padding: 15px 17px;
+        border: 1px solid rgba(92, 210, 255, .08);
+        border-radius: 9px;
+        background:
+          linear-gradient(
+            145deg,
+            rgba(14, 37, 62, .72),
+            rgba(7, 24, 43, .82)
+          );
+      }
+
+      .hc-simulation-control-copy {
+        min-width: 0;
+      }
+
+      .hc-simulation-control-title {
+        margin-top: 4px;
+        color: #dbeafe;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+
+      .hc-simulation-control-copy p {
+        margin: 5px 0 0;
+        max-width: 620px;
+        color: #71869e;
+        font-size: 9px;
+        line-height: 1.5;
+      }
+
+      .hc-simulation-control-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+      }
+
+      .hc-simulation-refresh {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .hc-simulation-refresh .icon {
+        width: 12px;
+        height: 12px;
+      }
+
+      .hc-simulation-kpi-grid {
+        display: grid !important;
+        grid-template-columns:
+          repeat(4, minmax(0, 1fr)) !important;
+        gap: 10px;
+        box-sizing: border-box;
+        margin: 14px 14px 0;
+      }
+
+      .hc-simulation-kpi-grid .analytics-engine-kpi {
+        position: relative;
+        min-width: 0;
+        min-height: 84px;
+        box-sizing: border-box;
+        padding: 14px 15px;
+        border: 1px solid rgba(92, 210, 255, .10);
+        border-radius: 9px;
+        background:
+          linear-gradient(
+            145deg,
+            rgba(18, 48, 76, .82),
+            rgba(8, 27, 48, .88)
+          );
+      }
+
+      .hc-simulation-kpi-grid .analytics-engine-kpi:hover {
+        transform: translateY(-2px);
+        border-color: rgba(92, 210, 255, .20);
+        box-shadow:
+          0 14px 34px rgba(0, 0, 0, .16);
+      }
+
+      .hc-simulation-kpi-grid .analytics-engine-kpi-label {
+        margin: 0;
+        font-family: monospace;
+        font-size: 8px;
+        line-height: 1.25;
+        letter-spacing: .08em;
+        color: #7f94ad;
+      }
+
+      .hc-simulation-kpi-grid .analytics-engine-kpi-value {
+        margin-top: 8px;
+        font-family: monospace;
+        font-size: 21px;
+        line-height: 1.05;
+        font-weight: 700;
+        color: #e2f4ff;
+      }
+
+      .hc-simulation-kpi-grid .hc-modern-kpi-unit {
+        margin-left: 3px;
+        color: #71869e;
+        font-family: monospace;
+        font-size: 10px;
+        font-weight: 500;
+      }
+
+      .hc-simulation-kpi-grid .hc-modern-kpi-meta {
+        margin-top: 7px;
+        color: #71869e;
+        font-size: 8px;
+        line-height: 1.4;
+      }
+
+      .hc-simulation-results-card {
+        box-sizing: border-box;
+        margin: 22px 14px 0;
+        padding: 0 0 14px;
+        border: 1px solid rgba(92, 210, 255, .10);
+        border-radius: 10px;
+        background:
+          linear-gradient(145deg, rgba(14, 38, 62, .72), rgba(7, 24, 43, .82));
+        overflow: hidden;
+      }
+
+      .hc-simulation-section-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 15px;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 16px 16px 13px;
+        border-bottom: 1px solid rgba(92, 210, 255, .08);
+      }
+
+      .hc-simulation-section-heading h3 {
+        margin: 4px 0 0;
+        color: #dbeafe;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+
+      .hc-simulation-section-heading p {
+        margin: 4px 0 0;
+        max-width: 680px;
+        color: #71869e;
+        font-size: 9px;
+        line-height: 1.5;
+      }
+
+      .hc-simulation-results-grid {
+        display: grid;
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        box-sizing: border-box;
+        margin: 12px 12px 0;
+      }
+
+      .hc-simulation-result-panel {
+        min-width: 0;
+      }
+
+      .hc-simulation-result-panel .analytics-engine-card {
+        height: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        margin: 0;
+      }
+
+      .hc-simulation-result-panel .analytics-engine-card-header {
+        min-height: 62px;
+        box-sizing: border-box;
+        padding: 14px 16px 11px;
+      }
+
+      .hc-simulation-result-panel .analytics-engine-card-title {
+        font-size: 12px;
+        line-height: 1.3;
+      }
+
+      .hc-simulation-result-panel .analytics-engine-card-subtitle {
+        margin-top: 4px;
+        font-size: 9px;
+        line-height: 1.4;
+      }
+
+      .hc-simulation-result-panel .hc-modern-panel-body {
+        padding: 14px 16px 16px;
+      }
+
+      .hc-simulation-results-grid .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+      }
+
+      .hc-simulation-results-grid .data-table {
+        width: 100%;
+        table-layout: fixed;
+      }
+
+      .hc-simulation-results-grid .data-table th,
+      .hc-simulation-results-grid .data-table td {
+        padding: 9px 7px;
+        line-height: 1.35;
+        vertical-align: middle;
+      }
+
+      .hc-simulation-results-grid .data-table th {
+        font-size: 8px;
+        letter-spacing: .06em;
+      }
+
+      .hc-simulation-results-grid .data-table td {
+        font-size: 9px;
+      }
+
+      .hc-simulation-results-grid .data-table th:first-child,
+      .hc-simulation-results-grid .data-table td:first-child {
+        width: 34%;
+      }
+
+      .hc-simulation-results-grid .data-table th:last-child,
+      .hc-simulation-results-grid .data-table td:last-child {
+        width: 33%;
+      }
+
+      .hc-simulation-comparison {
+        margin: 12px 14px 0;
+      }
+
+      .hc-simulation-comparison .dash-card {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        border-color: rgba(92, 210, 255, .10);
+        border-radius: 9px;
+        background:
+          linear-gradient(
+            145deg,
+            rgba(16, 39, 64, .92),
+            rgba(8, 25, 45, .96)
+          );
+      }
+
+      .hc-simulation-comparison .dash-card-header {
+        padding: 14px 16px 11px;
+      }
+
+      .hc-simulation-comparison .dash-card-body {
+        padding: 14px 16px 16px;
+      }
+
+      .hc-simulation-source-strip {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        box-sizing: border-box;
+        margin: 14px 14px 14px;
+        padding: 12px 14px;
+        border: 1px solid rgba(92, 210, 255, .08);
+        border-radius: 9px;
+        background: rgba(7, 24, 43, .55);
+      }
+
+      .hc-simulation-source-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 26px;
+        width: 26px;
+        height: 26px;
+        box-sizing: border-box;
+        border: 1px solid rgba(92, 210, 255, .10);
+        border-radius: 7px;
+        color: #6fdcff;
+      }
+
+      .hc-simulation-source-icon .icon {
+        width: 13px;
+        height: 13px;
+      }
+
+      .hc-simulation-source-strip strong {
+        display: block;
+        color: #bfe9ff;
+        font-size: 9px;
+        line-height: 1.35;
+      }
+
+      .hc-simulation-source-strip span {
+        display: block;
+        margin-top: 3px;
+        color: #71869e;
+        font-size: 8px;
+        line-height: 1.5;
+      }
+
+      .hc-simulation-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 310px;
+        box-sizing: border-box;
+        padding: 40px 24px;
+        text-align: center;
+      }
+
+      .hc-simulation-state-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        margin-bottom: 12px;
+        border: 1px solid rgba(92, 210, 255, .12);
+        border-radius: 9px;
+        color: #6fdcff;
+        background: rgba(53, 208, 255, .055);
+      }
+
+      .hc-simulation-state-icon .icon {
+        width: 17px;
+        height: 17px;
+      }
+
+      .hc-simulation-state h3 {
+        margin: 6px 0 0;
+        color: #dbeafe;
+        font-size: 14px;
+      }
+
+      .hc-simulation-state p {
+        margin: 6px 0 0;
+        color: #71869e;
+        font-size: 9px;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 1000px) {
+
+        .hc-simulation-kpi-grid {
+          grid-template-columns:
+            repeat(2, minmax(0, 1fr)) !important;
+        }
+
+        .hc-simulation-results-grid {
+          grid-template-columns: 1fr;
+        }
+
+      }
+
+      @media (max-width: 720px) {
+
+        .hc-simulation-header,
+        .hc-simulation-control,
+        .hc-simulation-results-card {
+          margin-top: 16px;
+        }
+
+        .hc-simulation-section-heading {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .hc-simulation-control-actions {
+          width: 100%;
+          justify-content: flex-start;
+        }
+
+        .hc-simulation-status {
+          align-self: flex-start;
+        }
+
+      }
+
+      @media (max-width: 620px) {
+
+        .hc-simulation-kpi-grid {
+          grid-template-columns: 1fr !important;
+        }
+
+        .hc-simulation-header {
+          padding: 16px;
+        }
+
+        .hc-simulation-control {
+          margin-left: 10px;
+          margin-right: 10px;
+        }
+
+        .hc-simulation-kpi-grid,
+        .hc-simulation-results-grid {
+          margin-left: 10px;
+          margin-right: 10px;
+        }
+
+        .hc-simulation-section-heading {
+          margin-left: 10px;
+          margin-right: 10px;
+        }
+
+        .hc-simulation-comparison,
+        .hc-simulation-source-strip {
+          margin-left: 10px;
+          margin-right: 10px;
+        }
+
+      }
+
+      .hc-leak-modern {
+        width:100%;
+      }
+
+      /* Match the finalized Alerts shell exactly: use the shared
+         dash-card surface instead of layering a second translucent
+         blue background over it. */
+      .hc-leak-shell {
+        width:100%;
+        margin:0;
+        overflow:hidden;
+        background:var(--bg-card,#10233b);
+        border:1px solid var(--border-subtle,rgba(255,255,255,.08));
+        border-radius:var(--radius-lg,8px);
+        box-shadow:var(--shadow-card,0 2px 8px rgba(0,0,0,.35));
+      }
+
+      .hc-leak-shell-header {
+        min-height:68px;
+      }
+
+      .hc-leak-shell-header .icon-box {
+        color:#73d9ff;
+        border-color:rgba(92,210,255,.12);
+        background:rgba(53,208,255,.055);
+      }
+
+      .hc-leak-shell-mode {
+        display:flex;
+        align-items:center;
+        gap:9px;
+        flex-shrink:0;
+        min-width:205px;
+        padding:8px 11px;
+        border:1px solid rgba(92,210,255,.10);
+        border-radius:8px;
+        background:rgba(7,24,43,.58);
+      }
+
+      .hc-leak-shell-mode strong {
+        display:block;
+        color:#cfe8f7;
+        font-family:monospace;
+        font-size:8px;
+        letter-spacing:.09em;
+      }
+
+      .hc-leak-shell-mode span:not(.hc-leak-mode-dot) {
+        display:block;
+        margin-top:2px;
+        color:#536b82;
+        font-family:monospace;
+        font-size:6px;
+        letter-spacing:.06em;
+      }
+
+      .hc-leak-shell-body {
+        padding:0;
+        background:transparent;
+      }
+
+      .hc-leak-toolbar {
+        align-items:center;
+        width:100%;
+        box-sizing:border-box;
+        margin:0 0 18px;
+        padding:18px 18px 14px;
+      }
+
+      .hc-leak-toolbar-copy {
+        min-width:0;
+      }
+
+      .hc-leak-toolbar-right {
+        display:flex;
+        align-items:center;
+        justify-content:flex-end;
+        gap:9px;
+        flex-shrink:0;
+      }
+
+      .hc-leak-mode-badge {
+        display:flex;
+        align-items:center;
+        gap:9px;
+        min-width:150px;
+        padding:8px 11px;
+        border:1px solid rgba(92,210,255,.10);
+        border-radius:8px;
+        background:rgba(7,24,43,.58);
+      }
+
+      .hc-leak-mode-dot {
+        width:7px;
+        height:7px;
+        flex-shrink:0;
+        border-radius:50%;
+        background:#83d8ad;
+        box-shadow:0 0 9px rgba(131,216,173,.38);
+      }
+
+      .hc-leak-mode-badge strong {
+        display:block;
+        color:#cfe8f7;
+        font-family:monospace;
+        font-size:8px;
+        letter-spacing:.09em;
+      }
+
+      .hc-leak-mode-badge span:not(.hc-leak-mode-dot) {
+        display:block;
+        margin-top:2px;
+        color:#536b82;
+        font-family:monospace;
+        font-size:6px;
+        letter-spacing:.06em;
+      }
+
+      .hc-leak-summary-grid {
+        display:grid;
+        width:100%;
+        max-width:100%;
+        box-sizing:border-box;
+        padding:0;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        gap:12px;
+        margin:0 0 22px;
+      }
+
+      .hc-leak-summary-card {
+        display:flex;
+        width:100%;
+        max-width:100%;
+        box-sizing:border-box;
+        align-items:center;
+        gap:12px;
+        min-width:0;
+        min-height:78px;
+        padding:12px 14px;
+        border:1px solid rgba(92,210,255,.09);
+        border-radius:10px;
+        background:linear-gradient(145deg,rgba(18,48,76,.70),rgba(8,27,48,.84));
+      }
+
+      .hc-leak-summary-card.is-warning {
+        border-color:rgba(255,184,107,.14);
+      }
+
+      .hc-leak-summary-icon {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:31px;
+        height:31px;
+        flex-shrink:0;
+        border:1px solid rgba(92,210,255,.11);
+        border-radius:8px;
+        color:#73d9ff;
+        background:rgba(53,208,255,.055);
+      }
+
+      .hc-leak-summary-card.is-warning .hc-leak-summary-icon {
+        color:#ffbe78;
+        border-color:rgba(255,184,107,.16);
+        background:rgba(255,184,107,.06);
+      }
+
+      .hc-leak-summary-icon .icon {
+        width:15px;
+        height:15px;
+      }
+
+      .hc-leak-summary-copy {
+        min-width:0;
+        max-width:100%;
+        overflow:hidden;
+      }
+
+      .hc-leak-summary-copy > span {
+        display:block;
+        color:#71869e;
+        font-family:monospace;
+        font-size:7px;
+        font-weight:600;
+        letter-spacing:.09em;
+      }
+
+      .hc-leak-summary-copy > strong {
+        display:block;
+        margin-top:4px;
+        color:#e3f3ff;
+        font-family:monospace;
+        font-size:21px;
+        line-height:1;
+        white-space:nowrap;
+      }
+
+      .hc-leak-summary-copy > strong small {
+        margin-left:3px;
+        color:#71869e;
+        font-size:9px;
+        font-weight:600;
+      }
+
+      .hc-leak-summary-copy > small {
+        display:block;
+        margin-top:4px;
+        overflow:hidden;
+        color:#536b82;
+        font-size:7px;
+        line-height:1.35;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+
+      .hc-leak-dispatch-heading {
+        display:flex;
+        padding-left:18px;
+        padding-right:18px;
+        align-items:flex-end;
+        justify-content:space-between;
+        gap:14px;
+        margin:2px 0 10px;
+        padding-top:2px;
+      }
+
+      .hc-leak-dispatch-heading h3 {
+        margin:4px 0 0;
+        color:#dbeafe;
+        font-size:14px;
+        font-weight:700;
+      }
+
+      .hc-leak-dispatch-heading p {
+        margin:4px 0 0;
+        max-width:680px;
+        color:#71869e;
+        font-size:9px;
+        line-height:1.5;
+      }
+
+      .hc-leak-dispatch-count {
+        flex-shrink:0;
+        color:#536b82;
+        font-family:monospace;
+        font-size:7px;
+        letter-spacing:.08em;
+      }
+
+      .hc-leak-analysis-grid {
+        width:100%;
+        max-width:100%;
+        box-sizing:border-box;
+        gap:14px;
+        padding:0 18px;
+      }
+
+      .hc-leak-residual-panel {
+        min-width:0;
+        overflow:hidden;
+        border:1px solid rgba(92,210,255,.08);
+        border-radius:9px;
+        background:#0e1e33;
+      }
+
+      .hc-leak-residual-header {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:14px;
+        min-height:72px;
+        padding:12px 14px;
+        border-bottom:1px solid rgba(92,210,255,.07);
+      }
+
+      .hc-leak-residual-title-wrap {
+        display:flex;
+        align-items:center;
+        gap:11px;
+        min-width:0;
+      }
+
+      .hc-leak-residual-icon {
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:31px;
+        height:31px;
+        flex:0 0 31px;
+        border:1px solid rgba(53,208,255,.14);
+        border-radius:8px;
+        color:#73d9ff;
+        background:rgba(53,208,255,.055);
+      }
+
+      .hc-leak-residual-icon .icon {
+        width:15px;
+        height:15px;
+      }
+
+      .hc-leak-residual-heading {
+        min-width:0;
+      }
+
+      .hc-leak-residual-eyebrow {
+        color:#71869e;
+        font-family:monospace;
+        font-size:7px;
+        font-weight:600;
+        letter-spacing:.09em;
+      }
+
+      .hc-leak-residual-heading h3 {
+        margin:3px 0 0;
+        color:#dbeafe;
+        font-size:14px;
+        line-height:1.2;
+        font-weight:700;
+      }
+
+      .hc-leak-residual-heading p {
+        margin:3px 0 0;
+        color:#61788f;
+        font-size:8px;
+        line-height:1.4;
+      }
+
+      .hc-leak-residual-badge {
+        flex-shrink:0;
+        padding:6px 8px;
+        border:1px solid rgba(92,210,255,.09);
+        border-radius:6px;
+        color:#7ea0b9;
+        background:rgba(7,24,43,.45);
+        font-family:monospace;
+        font-size:7px;
+        letter-spacing:.08em;
+      }
+
+      .hc-leak-residual-body {
+        padding:12px 14px 14px;
+      }
+
+      .hc-leak-boundary {
+        margin:16px 18px 0;
+      }
+
+      @media (max-width:1050px) {
+        .hc-leak-summary-grid {
+          grid-template-columns:repeat(2,minmax(0,1fr));
+        }
+
+        .hc-leak-toolbar-right {
+          align-items:flex-end;
+          flex-direction:column;
+        }
+      }
+
+      @media (max-width:760px) {
+        .hc-leak-shell-mode {
+          width:100%;
+          min-width:0;
+        }
+
+        .hc-leak-shell-body {
+          padding:0;
+        }
+
+        .hc-leak-toolbar,
+        .hc-leak-summary-grid,
+        .hc-leak-dispatch-heading,
+        .hc-leak-analysis-grid {
+          padding-left:14px;
+          padding-right:14px;
+        }
+
+        .hc-leak-boundary {
+          margin-left:14px;
+          margin-right:14px;
+        }
+
+        .hc-leak-toolbar {
+          align-items:flex-start;
+          flex-direction:column;
+        }
+
+        .hc-leak-toolbar-right {
+          width:100%;
+          align-items:stretch;
+        }
+
+        .hc-leak-mode-badge {
+          width:100%;
+        }
+
+        .hc-leak-summary-grid {
+          grid-template-columns:1fr;
+        }
+
+        .hc-leak-dispatch-heading {
+          align-items:flex-start;
+          flex-direction:column;
+        }
+      }
+
+    `;
+
     document.head.appendChild(
       style
     );
 
   }
+
+
+  /* ==========================================================
+     DIGITAL TWIN — CLEAN UI POLISH
+     Presentation-only overrides. No data/API behavior changed.
+     ========================================================== */
+
+  const digitalTwinPolishStyle =
+    document.createElement('style');
+
+  digitalTwinPolishStyle.id =
+    'hydro-digital-twin-clean-polish';
+
+  digitalTwinPolishStyle.textContent = `
+
+    .hc-digital-twin-modern {
+      width:100%;
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+      border:1px solid rgba(92,210,255,.10);
+      border-radius:8px;
+      overflow:hidden;
+      background:
+        linear-gradient(
+          145deg,
+          #102b47 0%,
+          #0d263f 55%,
+          #0b2239 100%
+        );
+      box-shadow:
+        0 8px 24px rgba(0,0,0,.12);
+    }
+
+    /* Compact hero — same visual density as the other municipal modules. */
+    .hc-digital-twin-modern .hc-dt-hero {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
+      min-height:84px;
+      margin:0;
+      padding:18px 20px;
+      box-sizing:border-box;
+      border:0;
+      border-bottom:1px solid rgba(92,210,255,.07);
+      border-radius:0;
+      background:rgba(16,43,71,.96);
+    }
+
+    .hc-digital-twin-modern .hc-dt-hero-main {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+
+    .hc-digital-twin-modern .hc-dt-hero-icon {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 36px;
+      width:36px;
+      height:36px;
+      box-sizing:border-box;
+      border:1px solid rgba(92,210,255,.14);
+      border-radius:8px;
+      color:#6fe0ff;
+      background:rgba(53,208,255,.055);
+    }
+
+    .hc-digital-twin-modern .hc-dt-hero-icon .icon {
+      width:17px;
+      height:17px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-hero-copy {
+      min-width:0;
+    }
+
+    .hc-digital-twin-modern .hc-dt-hero-copy h2 {
+      margin:4px 0 0;
+      color:#e1f0fb;
+      font-size:15px;
+      font-weight:700;
+      line-height:1.2;
+    }
+
+    .hc-digital-twin-modern .hc-dt-hero-copy p {
+      margin:5px 0 0;
+      color:#71869e;
+      font-size:9px;
+      line-height:1.45;
+    }
+
+    .hc-digital-twin-modern .hc-dt-hero-meta {
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:9px;
+      flex-shrink:0;
+    }
+
+    .hc-digital-twin-modern .hc-dt-live-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 8px;
+      border:1px solid rgba(53,208,255,.13);
+      border-radius:6px;
+      color:#70dfff;
+      background:rgba(53,208,255,.045);
+      font-family:monospace;
+      font-size:7px;
+      font-weight:700;
+      letter-spacing:.08em;
+    }
+
+    .hc-digital-twin-modern .hc-dt-live-badge > span {
+      width:5px;
+      height:5px;
+      border-radius:50%;
+      background:#35d0ff;
+      box-shadow:0 0 7px rgba(53,208,255,.55);
+    }
+
+    .hc-digital-twin-modern .hc-dt-hero-context {
+      color:#536b82;
+      font-family:monospace;
+      font-size:7px;
+      letter-spacing:.08em;
+      white-space:nowrap;
+    }
+
+    /* One clean command row instead of a large floating control block. */
+    .hc-digital-twin-modern .hc-dt-command {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:18px;
+      min-height:68px;
+      margin:14px 14px 0;
+      padding:15px 17px;
+      box-sizing:border-box;
+      border:1px solid rgba(92,210,255,.08);
+      border-radius:8px;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(14,37,62,.72),
+          rgba(7,24,43,.82)
+        );
+    }
+
+    .hc-digital-twin-modern .hc-dt-command-copy {
+      min-width:0;
+    }
+
+    .hc-digital-twin-modern .hc-dt-command-copy strong {
+      display:block;
+      margin-top:4px;
+      color:#dbeafe;
+      font-size:12px;
+      font-weight:650;
+      line-height:1.2;
+    }
+
+    .hc-digital-twin-modern .hc-dt-command-copy > span {
+      display:block;
+      margin-top:4px;
+      color:#5e748b;
+      font-size:8px;
+      line-height:1.35;
+    }
+
+    .hc-digital-twin-modern .hc-dt-command-actions {
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:7px;
+      flex-shrink:0;
+    }
+
+    .hc-digital-twin-modern .hc-dt-command-actions .hc-modern-scenario-group {
+      display:flex;
+      align-items:center;
+      gap:3px;
+      padding:3px;
+      border:1px solid rgba(92,210,255,.08);
+      border-radius:7px;
+      background:rgba(5,20,35,.72);
+    }
+
+    .hc-digital-twin-modern .hc-dt-command-actions .analytics-scenario-btn {
+      min-height:29px;
+      padding:0 10px;
+      border-radius:5px;
+      font-size:8px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-refresh {
+      min-height:35px;
+      padding-left:11px;
+      padding-right:11px;
+      border-radius:6px;
+    }
+
+    /* Explicit KPI cards keep Digital Twin visually aligned with Simulation/Alerts. */
+    .hc-digital-twin-modern .hc-dt-kpis {
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:10px;
+      margin:14px 14px 0;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi {
+      position:relative;
+      min-width:0;
+      min-height:84px;
+      padding:14px 15px;
+      box-sizing:border-box;
+      overflow:hidden;
+      border:1px solid rgba(92,210,255,.10);
+      border-radius:9px;
+      background:
+        linear-gradient(
+          145deg,
+          rgba(18,48,76,.82),
+          rgba(8,27,48,.88)
+        );
+      transition:
+        transform .18s ease,
+        border-color .18s ease,
+        box-shadow .18s ease;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi:hover {
+      transform:translateY(-2px);
+      border-color:rgba(92,210,255,.20);
+      box-shadow:
+        0 14px 34px rgba(0,0,0,.16);
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi::after {
+      content:'';
+      position:absolute;
+      right:-24px;
+      bottom:-28px;
+      width:72px;
+      height:72px;
+      border-radius:50%;
+      background:rgba(53,208,255,.035);
+      pointer-events:none;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi-label {
+      color:#71869e;
+      font-family:monospace;
+      font-size:7px;
+      font-weight:600;
+      letter-spacing:.10em;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi-row {
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-top:7px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi-row strong {
+      min-width:0;
+      color:#e2f4ff;
+      font-family:monospace;
+      font-size:21px;
+      font-weight:700;
+      line-height:1;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi-row strong.hc-dt-kpi-scenario {
+      font-size:11px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi-row strong.hc-dt-kpi-error {
+      color:#ff8c96;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi-icon {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 27px;
+      width:27px;
+      height:27px;
+      box-sizing:border-box;
+      border:1px solid rgba(92,210,255,.10);
+      border-radius:7px;
+      color:#6fdcff;
+      background:rgba(53,208,255,.055);
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi-icon .icon {
+      width:14px;
+      height:14px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-kpi-note {
+      display:block;
+      position:relative;
+      z-index:1;
+      margin-top:6px;
+      color:#536b82;
+      font-size:7px;
+      line-height:1.25;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    /* Keep the workspace heading tight; the map should be the visual focus. */
+    .hc-digital-twin-modern .hc-dt-workspace-heading {
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:16px;
+      margin:22px 14px 9px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-workspace-heading h3 {
+      margin:3px 0 0;
+      color:#dbeafe;
+      font-size:12px;
+      font-weight:650;
+      line-height:1.2;
+    }
+
+    .hc-digital-twin-modern .hc-dt-workspace-heading p {
+      margin:4px 0 0;
+      color:#5e748b;
+      font-size:8px;
+      line-height:1.35;
+    }
+
+    .hc-digital-twin-modern .hc-dt-scenario-badge {
+      flex-shrink:0;
+      padding:5px 8px;
+      border:1px solid rgba(92,210,255,.09);
+      border-radius:5px;
+      color:#6d879f;
+      background:rgba(7,24,43,.55);
+      font-family:monospace;
+      font-size:7px;
+      letter-spacing:.07em;
+    }
+
+    /* Existing Cesium/map content: cleaner cards, stronger map hierarchy. */
+    .hc-digital-twin-modern .hc-dt-original-wrap {
+      width:auto;
+      margin:0 14px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-grid {
+      grid-template-columns:minmax(0,1.72fr) minmax(285px,.78fr);
+      gap:10px;
+      margin:0;
+    }
+
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-map-card,
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-detail-card {
+      border:1px solid rgba(92,210,255,.085);
+      border-radius:8px;
+      background:linear-gradient(145deg,rgba(12,34,56,.92),rgba(7,24,43,.96));
+      box-shadow:0 8px 22px rgba(0,0,0,.10);
+    }
+
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-map-card .dash-card-header,
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-detail-card .dash-card-header {
+      min-height:54px;
+      padding:11px 13px;
+      border-bottom:1px solid rgba(92,210,255,.065);
+    }
+
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-map-card .dash-card-title,
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-detail-card .dash-card-title {
+      font-size:12px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-map-card .dash-card-subtitle,
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-detail-card .dash-card-subtitle {
+      margin-top:3px;
+      font-size:8px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-map-wrap,
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-map {
+      min-height:455px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-map-wrap {
+      border-radius:0;
+      border-top:0;
+      border-bottom:1px solid rgba(92,210,255,.06);
+    }
+
+    .hc-digital-twin-modern .hc-dt-original-wrap .dt-detail-card .dash-card-body {
+      min-height:455px;
+      padding:13px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-source-strip {
+      margin-top:10px;
+      padding:9px 11px;
+      border-radius:7px;
+    }
+
+    .hc-digital-twin-modern .hc-dt-source-state {
+      margin-left:auto;
+      flex-shrink:0;
+      color:#61d9f7;
+      font-family:monospace;
+      font-size:7px;
+      letter-spacing:.06em;
+    }
+
+    @media (max-width:1050px) {
+      .hc-digital-twin-modern .hc-dt-kpis {
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+
+      .hc-digital-twin-modern .hc-dt-command {
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .hc-digital-twin-modern .hc-dt-command-actions {
+        width:100%;
+        justify-content:flex-start;
+      }
+    }
+
+    @media (max-width:760px) {
+      .hc-digital-twin-modern .hc-dt-hero {
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .hc-digital-twin-modern .hc-dt-hero-meta {
+        width:100%;
+        justify-content:flex-start;
+      }
+
+      .hc-digital-twin-modern .hc-dt-command-actions {
+        align-items:stretch;
+        flex-direction:column;
+      }
+
+      .hc-digital-twin-modern .hc-dt-command-actions .hc-modern-scenario-group {
+        width:100%;
+      }
+
+      .hc-digital-twin-modern .hc-dt-command-actions .analytics-scenario-btn {
+        flex:1;
+      }
+
+      .hc-digital-twin-modern .hc-dt-refresh {
+        width:100%;
+        justify-content:center;
+      }
+
+      .hc-digital-twin-modern .hc-dt-workspace-heading {
+        align-items:flex-start;
+        flex-direction:column;
+      }
+
+      .hc-digital-twin-modern .hc-dt-original-wrap .dt-grid {
+        grid-template-columns:1fr;
+      }
+
+      .hc-digital-twin-modern .hc-dt-original-wrap .dt-map-wrap,
+      .hc-digital-twin-modern .hc-dt-original-wrap .dt-map,
+      .hc-digital-twin-modern .hc-dt-original-wrap .dt-detail-card .dash-card-body {
+        min-height:380px;
+      }
+    }
+
+    @media (max-width:520px) {
+      .hc-digital-twin-modern .hc-dt-kpis {
+        grid-template-columns:1fr;
+      }
+
+      .hc-digital-twin-modern .hc-dt-hero-context {
+        display:none;
+      }
+    }
+  `;
+
+  document.head.appendChild(
+    digitalTwinPolishStyle
+  );
 
 
   console.log(

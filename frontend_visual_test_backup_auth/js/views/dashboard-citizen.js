@@ -433,13 +433,11 @@ const DashboardCitizenView = {
     const state =
       DashboardCitizenView.state;
 
-
     const activeReports =
       reports.filter(
         report =>
           report.status !== 'Resolved'
       ).length;
-
 
     const resolvedReports =
       reports.filter(
@@ -447,680 +445,1369 @@ const DashboardCitizenView = {
           report.status === 'Resolved'
       ).length;
 
-
     const reportError =
       state.reportsError
         ? `
-          <div
-            class="notice-box-subtle"
-            style="
-              margin-bottom:16px;
-              border-color:rgba(255,80,80,.25);
-            "
-          >
-            <span class="text-xs text-secondary">
+          <div class="hc-citizen-notice hc-citizen-notice-error">
+            ${Icons.alertCircle('icon')}
+            <span>
               Unable to load reports from the municipal server.
-              ${DashboardCitizenView.escape(
-                state.reportsError
-              )}
+              ${DashboardCitizenView.escape(state.reportsError)}
             </span>
           </div>
         `
         : '';
-
 
     const reportLoading =
       state.reportsLoading
         ? `
-          <div
-            class="notice-box-subtle"
-            style="margin-bottom:16px;"
-          >
-            <span class="text-xs text-secondary">
-              Loading your reports from the municipal server...
-            </span>
+          <div class="hc-citizen-notice">
+            ${Icons.infoCircle('icon')}
+            <span>Loading your reports from the municipal server...</span>
           </div>
         `
         : '';
 
-
     return `
 
-      <div class="citizen-dashboard-container">
+      <div class="citizen-dashboard-container hc-citizen-dashboard">
 
+        <style>
+          .hc-citizen-dashboard {
+            --hc-c-bg: #06111f;
+            --hc-c-surface: #0b1d30;
+            --hc-c-surface-2: #0e2740;
+            --hc-c-border: rgba(72, 122, 160, .24);
+            --hc-c-border-strong: rgba(72, 152, 190, .34);
+            --hc-c-text: #e8f1f7;
+            --hc-c-muted: #7e99ad;
+            --hc-c-accent: #19d3c5;
+            --hc-c-accent-2: #20b8e8;
+            --hc-c-warning: #f5a64a;
+            --hc-c-danger: #ff6b73;
+            width:100%;
+            min-width:0;
+            color:var(--hc-c-text);
+          }
 
-        <!-- =====================================================
-             PORTAL HEADER
-        ====================================================== -->
+          .hc-citizen-dashboard * {
+            box-sizing:border-box;
+          }
 
-        <div class="portal-subheader">
+          .hc-citizen-dashboard .hc-citizen-shell {
+            width:100%;
+            max-width:1440px;
+            margin:0 auto;
+            padding:28px 32px 48px;
+          }
 
-          <div class="container">
+          .hc-citizen-dashboard .hc-citizen-hero {
+            position:relative;
+            overflow:hidden;
+            border:1px solid var(--hc-c-border);
+            border-radius:14px;
+            background:
+              radial-gradient(circle at 90% 0%, rgba(24, 181, 219, .10), transparent 34%),
+              linear-gradient(135deg, #102c47 0%, #0b2035 58%, #08192a 100%);
+            box-shadow:0 14px 36px rgba(0,0,0,.16);
+          }
 
-            <div class="portal-subheader-inner">
+          .hc-citizen-dashboard .hc-citizen-hero::after {
+            content:"";
+            position:absolute;
+            width:180px;
+            height:180px;
+            right:-70px;
+            bottom:-105px;
+            border-radius:50%;
+            background:rgba(25,211,197,.055);
+            pointer-events:none;
+          }
 
-              <div>
+          .hc-citizen-dashboard .hc-citizen-hero-inner {
+            position:relative;
+            z-index:1;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:28px;
+            padding:24px 26px;
+          }
 
-                <div class="portal-role-tag">
-                  CITIZEN PORTAL
+          .hc-citizen-dashboard .hc-citizen-brand-row {
+            display:flex;
+            align-items:center;
+            gap:14px;
+            min-width:0;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-brand-icon {
+            width:46px;
+            height:46px;
+            flex:0 0 46px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border:1px solid rgba(25,211,197,.24);
+            border-radius:11px;
+            background:rgba(25,211,197,.07);
+            color:var(--hc-c-accent);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-eyebrow {
+            margin-bottom:6px;
+            color:#6f91a9;
+            font:600 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:1.7px;
+            text-transform:uppercase;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-title {
+            margin:0;
+            color:var(--hc-c-text);
+            font-size:22px;
+            line-height:1.2;
+            font-weight:700;
+            letter-spacing:-.02em;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-subtitle {
+            margin:6px 0 0;
+            color:var(--hc-c-muted);
+            font-size:12px;
+            line-height:1.55;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-actions {
+            display:flex;
+            align-items:center;
+            justify-content:flex-end;
+            gap:10px;
+            flex-wrap:wrap;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-location {
+            display:flex;
+            align-items:center;
+            gap:8px;
+            min-width:0;
+            padding:7px 10px;
+            border:1px solid rgba(72,122,160,.25);
+            border-radius:8px;
+            background:rgba(4,14,25,.26);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-location-label {
+            color:#6f91a9;
+            font:600 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:1px;
+            white-space:nowrap;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-location select {
+            min-width:170px;
+            max-width:220px;
+            height:32px;
+            padding:0 28px 0 8px;
+            border-color:rgba(72,122,160,.28);
+            background:#091a2b;
+            color:#dce8ef;
+            font-size:11px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-primary {
+            height:36px;
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            padding:0 13px;
+            border:1px solid rgba(25,211,197,.30);
+            border-radius:8px;
+            background:linear-gradient(180deg, rgba(25,211,197,.18), rgba(25,211,197,.08));
+            color:#bffbf5;
+            box-shadow:none;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-primary:hover {
+            border-color:rgba(25,211,197,.50);
+            background:rgba(25,211,197,.14);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-section {
+            margin-top:22px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-section-head {
+            display:flex;
+            align-items:flex-end;
+            justify-content:space-between;
+            gap:18px;
+            margin-bottom:10px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-kicker {
+            color:#63869e;
+            font:600 9px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:1.6px;
+            text-transform:uppercase;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-section-title {
+            margin:5px 0 0;
+            color:#dfeaf1;
+            font-size:15px;
+            font-weight:650;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-section-copy {
+            margin:4px 0 0;
+            color:#6f8da3;
+            font-size:10px;
+            line-height:1.5;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-status {
+            display:flex;
+            align-items:center;
+            gap:7px;
+            padding:6px 9px;
+            border:1px solid rgba(25,211,197,.20);
+            border-radius:999px;
+            background:rgba(25,211,197,.055);
+            color:#83dcd5;
+            font:600 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:.7px;
+            white-space:nowrap;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-status-dot {
+            width:6px;
+            height:6px;
+            border-radius:50%;
+            background:var(--hc-c-accent);
+            box-shadow:0 0 10px rgba(25,211,197,.55);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-overview {
+            display:grid;
+            grid-template-columns:minmax(0,1.65fr) minmax(280px,.85fr);
+            gap:14px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-card {
+            min-width:0;
+            border:1px solid var(--hc-c-border);
+            border-radius:12px;
+            background:
+              linear-gradient(145deg, rgba(15,43,68,.94), rgba(8,27,45,.96));
+            box-shadow:0 10px 28px rgba(0,0,0,.12);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-card-head {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:14px;
+            padding:17px 18px 14px;
+            border-bottom:1px solid rgba(72,122,160,.16);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-card-title-wrap {
+            display:flex;
+            align-items:center;
+            gap:11px;
+            min-width:0;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-icon-box {
+            width:34px;
+            height:34px;
+            flex:0 0 34px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border:1px solid rgba(25,211,197,.20);
+            border-radius:8px;
+            background:rgba(25,211,197,.055);
+            color:var(--hc-c-accent);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-card-title {
+            margin:0;
+            color:#e3edf3;
+            font-size:13px;
+            font-weight:650;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-card-subtitle {
+            margin:3px 0 0;
+            color:#66859b;
+            font-size:10px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-card-body {
+            padding:18px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-service-main {
+            display:flex;
+            align-items:flex-start;
+            justify-content:space-between;
+            gap:22px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-service-name {
+            margin:0;
+            color:#eef6fa;
+            font-size:18px;
+            font-weight:680;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-service-meta {
+            margin-top:5px;
+            color:#718ea2;
+            font-size:10px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-service-state {
+            display:inline-flex;
+            align-items:center;
+            gap:7px;
+            margin-top:15px;
+            padding:7px 10px;
+            border:1px solid rgba(25,211,197,.20);
+            border-radius:7px;
+            background:rgba(25,211,197,.055);
+            color:#8be1da;
+            font:600 9px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:.6px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-advisory {
+            display:flex;
+            align-items:flex-start;
+            gap:10px;
+            padding:13px;
+            border:1px solid rgba(72,122,160,.19);
+            border-radius:9px;
+            background:rgba(5,18,31,.28);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-advisory svg,
+          .hc-citizen-dashboard .hc-citizen-advisory .icon {
+            color:var(--hc-c-accent-2);
+            flex:0 0 auto;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-advisory-label {
+            color:#dce9ef;
+            font-size:11px;
+            font-weight:650;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-advisory-text {
+            margin-top:4px;
+            color:#7894a7;
+            font-size:10px;
+            line-height:1.55;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metrics {
+            display:grid;
+            grid-template-columns:repeat(4,minmax(0,1fr));
+            gap:12px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metric {
+            position:relative;
+            overflow:hidden;
+            min-width:0;
+            min-height:112px;
+            padding:15px 16px;
+            border:1px solid var(--hc-c-border);
+            border-radius:10px;
+            background:linear-gradient(145deg,#0d2943,#091d31);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metric::after {
+            content:"";
+            position:absolute;
+            width:80px;
+            height:80px;
+            right:-35px;
+            bottom:-38px;
+            border-radius:50%;
+            background:rgba(25,211,197,.045);
+            pointer-events:none;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metric-head {
+            position:relative;
+            z-index:1;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:8px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metric-label {
+            color:#68879c;
+            font:600 8px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:1.1px;
+            text-transform:uppercase;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metric-icon {
+            width:28px;
+            height:28px;
+            flex:0 0 28px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border:1px solid rgba(72,152,190,.20);
+            border-radius:7px;
+            background:rgba(7,24,40,.50);
+            color:#55c5df;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metric-value {
+            position:relative;
+            z-index:1;
+            margin-top:14px;
+            color:#ecf5f8;
+            font-size:20px;
+            line-height:1.1;
+            font-weight:680;
+            letter-spacing:-.02em;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metric-value.small {
+            font-size:14px;
+            letter-spacing:0;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-metric-meta {
+            position:relative;
+            z-index:1;
+            margin-top:6px;
+            color:#64839a;
+            font-size:9px;
+            line-height:1.4;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-two-col {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+            gap:14px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-schedule {
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-schedule-row {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:16px;
+            padding:12px 13px;
+            border:1px solid rgba(72,122,160,.16);
+            border-radius:8px;
+            background:rgba(5,19,33,.30);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-schedule-day {
+            color:#dfeaf0;
+            font-size:11px;
+            font-weight:650;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-schedule-window {
+            margin-top:3px;
+            color:#72dcd3;
+            font:600 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-tag {
+            display:inline-flex;
+            align-items:center;
+            padding:5px 7px;
+            border:1px solid rgba(25,211,197,.17);
+            border-radius:6px;
+            color:#78cfc9;
+            background:rgba(25,211,197,.045);
+            font:600 8px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:.5px;
+            white-space:nowrap;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-meta-list {
+            display:flex;
+            flex-direction:column;
+            border:1px solid rgba(72,122,160,.15);
+            border-radius:8px;
+            overflow:hidden;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-meta-row {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:18px;
+            padding:12px 13px;
+            border-bottom:1px solid rgba(72,122,160,.12);
+            font-size:10px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-meta-row:last-child {
+            border-bottom:0;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-meta-label {
+            color:#66849a;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-meta-value {
+            color:#c9dce5;
+            text-align:right;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-report-cta {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:18px;
+            padding:18px;
+            border:1px solid rgba(25,211,197,.16);
+            border-radius:10px;
+            background:
+              linear-gradient(135deg,rgba(25,211,197,.065),rgba(8,29,47,.45));
+          }
+
+          .hc-citizen-dashboard .hc-citizen-report-cta-copy {
+            min-width:0;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-report-cta-title {
+            color:#e5f0f4;
+            font-size:13px;
+            font-weight:650;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-report-cta-text {
+            margin-top:4px;
+            color:#718da1;
+            font-size:10px;
+            line-height:1.5;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-table-wrap {
+            overflow:auto;
+            border:1px solid rgba(72,122,160,.16);
+            border-radius:9px;
+          }
+
+          .hc-citizen-dashboard .data-table {
+            width:100%;
+            min-width:760px;
+            border-collapse:collapse;
+            background:rgba(4,16,28,.18);
+          }
+
+          .hc-citizen-dashboard .data-table th {
+            padding:10px 12px;
+            border-bottom:1px solid rgba(72,122,160,.22);
+            color:#5f8198;
+            background:rgba(4,16,28,.30);
+            font:600 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:1px;
+            text-align:left;
+            text-transform:uppercase;
+          }
+
+          .hc-citizen-dashboard .data-table td {
+            padding:11px 12px;
+            border-bottom:1px solid rgba(72,122,160,.11);
+            color:#c6d8e1;
+            font-size:10px;
+            vertical-align:middle;
+          }
+
+          .hc-citizen-dashboard .data-table tbody tr:last-child td {
+            border-bottom:0;
+          }
+
+          .hc-citizen-dashboard .data-table tbody tr:hover {
+            background:rgba(25,211,197,.025);
+          }
+
+          .hc-citizen-dashboard .category-pill {
+            display:inline-flex;
+            align-items:center;
+            padding:5px 7px;
+            border:1px solid rgba(72,152,190,.20);
+            border-radius:6px;
+            background:rgba(72,152,190,.055);
+            color:#8fc5d7;
+            font-size:9px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-notice {
+            display:flex;
+            align-items:flex-start;
+            gap:9px;
+            margin-bottom:12px;
+            padding:11px 12px;
+            border:1px solid rgba(72,122,160,.18);
+            border-radius:8px;
+            background:rgba(5,19,33,.28);
+            color:#7795a8;
+            font-size:10px;
+            line-height:1.45;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-notice-error {
+            border-color:rgba(255,107,115,.24);
+            color:#c68f95;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-empty {
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            min-height:170px;
+            padding:28px;
+            border:1px dashed rgba(72,122,160,.20);
+            border-radius:9px;
+            background:rgba(5,19,33,.20);
+            text-align:center;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-empty-icon {
+            width:38px;
+            height:38px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            border:1px solid rgba(72,152,190,.20);
+            border-radius:9px;
+            color:#62c6dc;
+            background:rgba(72,152,190,.05);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-empty-title {
+            margin-top:10px;
+            color:#dce8ee;
+            font-size:11px;
+            font-weight:650;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-empty-copy {
+            max-width:420px;
+            margin-top:4px;
+            color:#69879a;
+            font-size:9px;
+            line-height:1.5;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-modal-backdrop {
+            backdrop-filter:blur(6px);
+            background:rgba(2,9,17,.78) !important;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-modal {
+            width:min(700px,100%);
+            max-height:calc(100vh - 32px);
+            border:1px solid rgba(72,122,160,.30);
+            border-radius:13px;
+            background:
+              linear-gradient(145deg,#102b45,#081a2c);
+            box-shadow:0 28px 80px rgba(0,0,0,.42);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-modal .modal-header {
+            padding:18px 20px;
+            border-bottom:1px solid rgba(72,122,160,.17);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-modal .modal-body {
+            padding:18px 20px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-modal .modal-footer {
+            padding:14px 20px 18px;
+            border-top:1px solid rgba(72,122,160,.17);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-form-grid {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+            gap:14px;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-form-full {
+            grid-column:1/-1;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-form-section {
+            padding:13px;
+            border:1px solid rgba(72,122,160,.15);
+            border-radius:9px;
+            background:rgba(5,19,33,.25);
+          }
+
+          .hc-citizen-dashboard .hc-citizen-form-section-title {
+            margin-bottom:10px;
+            color:#7898ad;
+            font:600 8px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+            letter-spacing:1.2px;
+            text-transform:uppercase;
+          }
+
+          .hc-citizen-dashboard .hc-citizen-dashboard-note {
+            display:flex;
+            align-items:flex-start;
+            gap:9px;
+            padding:11px 12px;
+            border:1px solid rgba(25,211,197,.15);
+            border-radius:8px;
+            background:rgba(25,211,197,.035);
+          }
+
+          @media (max-width:1050px) {
+            .hc-citizen-dashboard .hc-citizen-shell {
+              padding:24px 24px 42px;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-hero-inner {
+              align-items:flex-start;
+              flex-direction:column;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-actions {
+              width:100%;
+              justify-content:flex-start;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-overview {
+              grid-template-columns:1fr;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-metrics {
+              grid-template-columns:repeat(2,minmax(0,1fr));
+            }
+          }
+
+          @media (max-width:760px) {
+            .hc-citizen-dashboard .hc-citizen-shell {
+              padding:16px 14px 32px;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-hero-inner {
+              padding:18px;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-brand-icon {
+              width:40px;
+              height:40px;
+              flex-basis:40px;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-title {
+              font-size:18px;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-actions,
+            .hc-citizen-dashboard .hc-citizen-location {
+              width:100%;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-location select {
+              flex:1 1 auto;
+              min-width:0;
+              max-width:none;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-primary {
+              width:100%;
+              justify-content:center;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-metrics {
+              grid-template-columns:1fr 1fr;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-two-col {
+              grid-template-columns:1fr;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-service-main {
+              flex-direction:column;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-report-cta {
+              align-items:stretch;
+              flex-direction:column;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-report-cta .btn {
+              width:100%;
+              justify-content:center;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-form-grid {
+              grid-template-columns:1fr;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-form-full {
+              grid-column:auto;
+            }
+          }
+
+          @media (max-width:480px) {
+            .hc-citizen-dashboard .hc-citizen-metrics {
+              grid-template-columns:1fr;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-card-head {
+              padding:14px;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-card-body {
+              padding:14px;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-metric {
+              min-height:100px;
+            }
+
+            .hc-citizen-dashboard .hc-citizen-schedule-row {
+              align-items:flex-start;
+              flex-direction:column;
+              gap:8px;
+            }
+          }
+        </style>
+
+        <div class="hc-citizen-shell">
+
+          <!-- HERO / PORTAL HEADER -->
+          <section class="hc-citizen-hero">
+
+            <div class="hc-citizen-hero-inner">
+
+              <div class="hc-citizen-brand-row">
+
+                <div class="hc-citizen-brand-icon">
+                  ${Icons.pipeline('icon')}
                 </div>
 
-                <h1 class="portal-page-title">
-                  Community Water Dashboard
-                </h1>
+                <div>
+                  <div class="hc-citizen-eyebrow">
+                    CITIZEN PORTAL · HYDROCYBERNETICS
+                  </div>
 
-                <p class="text-xs text-secondary mt-2">
-                  Local water-service information for residents
-                </p>
+                  <h1 class="hc-citizen-title">
+                    Community Water Dashboard
+                  </h1>
+
+                  <p class="hc-citizen-subtitle">
+                    Water-service status, local advisories and issue reporting for residents.
+                  </p>
+                </div>
 
               </div>
 
+              <div class="hc-citizen-actions">
 
-              <div
-                class="portal-subheader-actions"
-                style="
-                  display:flex;
-                  align-items:center;
-                  justify-content:flex-end;
-                  flex-wrap:wrap;
-                  gap:12px;
-                  min-width:0;
-                "
-              >
+                <label class="hc-citizen-location">
 
-                <label
-                  class="text-xs text-secondary"
-                  for="citizen-location-select"
-                  style="
-                    display:flex;
-                    align-items:center;
-                    gap:8px;
-                    flex:0 1 auto;
-                    min-width:0;
-                    white-space:nowrap;
-                  "
-                >
-
-                  LOCATION
+                  <span class="hc-citizen-location-label">
+                    AREA
+                  </span>
 
                   <select
                     id="citizen-location-select"
                     class="form-select"
-                    style="
-                      min-width:190px;
-                      max-width:240px;
-                    "
                     onchange="
                       DashboardCitizenView.changeLocation(this.value);
                     "
                   >
-
-                    <option
-                      value="sadashiv_nagar"
-                    >
+                    <option value="sadashiv_nagar">
                       Sadashiv Nagar DMA
                     </option>
-
                   </select>
 
                 </label>
 
-
                 <button
                   type="button"
-                  class="btn btn-primary"
-                  style="
-                    flex:0 0 auto;
-                    white-space:nowrap;
-                  "
+                  class="btn hc-citizen-primary"
                   onclick="
                     DashboardCitizenView.openReportModal();
                   "
                 >
-
                   ${Icons.plus('icon')}
-
-                  <span>
-                    Report an Issue
-                  </span>
-
+                  <span>Report an Issue</span>
                 </button>
 
               </div>
 
             </div>
 
-          </div>
-
-        </div>
+          </section>
 
 
-        <!-- =====================================================
-             MAIN CONTENT
-        ====================================================== -->
+          <!-- SERVICE OVERVIEW -->
+          <section class="hc-citizen-section">
 
-        <div class="container py-8">
+            <div class="hc-citizen-section-head">
 
-
-          <!-- SERVICE STATUS -->
-
-          <div class="dash-card">
-
-            <div class="dash-card-body">
-
-              <div
-                style="
-                  display:grid;
-                  grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);
-                  gap:24px;
-                  align-items:stretch;
-                "
-              >
-
-                <div>
-
-                  <div
-                    class="text-xs font-mono text-accent mb-2"
-                  >
-                    // LOCAL SERVICE STATUS
-                  </div>
-
-                  <h2 class="text-2xl font-semibold">
-                    ${service.name}
-                  </h2>
-
-                  <p class="text-sm text-secondary mt-2">
-                    Public water-service information for the
-                    selected distribution area.
-                  </p>
-
-                  <div
-                    style="
-                      display:flex;
-                      align-items:center;
-                      gap:10px;
-                      margin-top:20px;
-                    "
-                  >
-
-                    <span
-                      class="status-badge status-badge-normal"
-                    >
-                      <span class="status-dot"></span>
-                      ${service.serviceStatus}
-                    </span>
-
-                    <span class="text-xs text-muted">
-                      ${service.scheduleStatus}
-                    </span>
-
-                  </div>
-
+              <div>
+                <div class="hc-citizen-kicker">
+                  SERVICE OVERVIEW
                 </div>
+                <div class="hc-citizen-section-title">
+                  Water service status
+                </div>
+                <p class="hc-citizen-section-copy">
+                  Current prototype information for the selected distribution area.
+                </p>
+              </div>
 
+              <div class="hc-citizen-status">
+                <span class="hc-citizen-status-dot"></span>
+                ${DashboardCitizenView.escape(service.serviceStatus)}
+              </div>
 
-                <div
-                  class="info-banner"
-                  style="margin:0;"
-                >
+            </div>
 
-                  ${Icons.alertCircle('icon')}
+            <div class="hc-citizen-overview">
 
-                  <div>
+              <article class="hc-citizen-card">
 
-                    <div class="font-semibold text-sm">
-                      Current advisory
+                <div class="hc-citizen-card-body">
+
+                  <div class="hc-citizen-service-main">
+
+                    <div>
+
+                      <h2 class="hc-citizen-service-name">
+                        ${DashboardCitizenView.escape(service.name)}
+                      </h2>
+
+                      <div class="hc-citizen-service-meta">
+                        ${DashboardCitizenView.escape(service.city)} · ${DashboardCitizenView.escape(service.scheduleStatus)}
+                      </div>
+
+                      <div class="hc-citizen-service-state">
+                        <span class="hc-citizen-status-dot"></span>
+                        ${DashboardCitizenView.escape(service.serviceStatus)}
+                      </div>
+
                     </div>
 
-                    <div class="text-xs text-secondary mt-1">
-                      ${service.advisory}
-                    </div>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <!-- =====================================================
-               SUMMARY CARDS
-          ====================================================== -->
-
-          <div
-            class="overview-cards-grid"
-            style="margin-top:24px;"
-          >
-
-
-            <div class="metric-card">
-
-              <div class="metric-card-header">
-
-                <span class="metric-label">
-                  NEXT SUPPLY WINDOW
-                </span>
-
-                ${Icons.pipeline('icon')}
-
-              </div>
-
-              <div class="metric-val text-accent">
-                ${service.nextWindow}
-              </div>
-
-              <div class="metric-meta text-xs text-muted">
-                Current prototype schedule
-              </div>
-
-            </div>
-
-
-            <div class="metric-card">
-
-              <div class="metric-card-header">
-
-                <span class="metric-label">
-                  MY REPORTS
-                </span>
-
-                ${Icons.fileText('icon')}
-
-              </div>
-
-              <div class="metric-val">
-                ${reports.length}
-              </div>
-
-              <div class="metric-meta text-xs text-muted">
-                ${activeReports}
-                active ·
-                ${resolvedReports}
-                resolved
-              </div>
-
-            </div>
-
-
-            <div class="metric-card">
-
-              <div class="metric-card-header">
-
-                <span class="metric-label">
-                  AREA
-                </span>
-
-                ${Icons.map('icon')}
-
-              </div>
-
-              <div
-                class="metric-val analytics-metric-value-small"
-              >
-                SADASHIV NAGAR
-              </div>
-
-              <div class="metric-meta text-xs text-muted">
-                Belagavi
-              </div>
-
-            </div>
-
-
-            <div class="metric-card">
-
-              <div class="metric-card-header">
-
-                <span class="metric-label">
-                  SERVICE UPDATES
-                </span>
-
-                ${Icons.alertCircle('icon')}
-
-              </div>
-
-              <div
-                class="metric-val analytics-metric-value-small"
-              >
-                ONLINE
-              </div>
-
-              <div class="metric-meta text-xs text-muted">
-                Advisory channel available
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <!-- =====================================================
-               SUPPLY + ADVISORIES
-          ====================================================== -->
-
-          <div
-            class="dashboard-grid-2col"
-            style="margin-top:32px;"
-          >
-
-
-            <div class="dash-card">
-
-              <div class="dash-card-header">
-
-                <div class="dash-card-title-wrap">
-
-                  <div class="icon-box">
-                    ${Icons.pipeline('icon')}
-                  </div>
-
-                  <div>
-
-                    <h2 class="dash-card-title">
-                      Water Supply Schedule
-                    </h2>
-
-                    <p class="dash-card-subtitle">
-                      Service timetable for ${service.name}
-                    </p>
-
-                  </div>
-
-                </div>
-
-              </div>
-
-
-              <div class="dash-card-body">
-
-                <div class="scenario-list">
-
-                  ${service.schedule.map(item => `
-
-                    <div class="scenario-item">
-
-                      <div class="scenario-item-header">
-
-                        <div class="font-semibold text-sm">
-                          ${item.day}
+                    <div style="min-width:180px;max-width:330px;width:100%;">
+                      <div class="hc-citizen-advisory">
+
+                        ${Icons.alertCircle('icon')}
+
+                        <div>
+                          <div class="hc-citizen-advisory-label">
+                            Current advisory
+                          </div>
+
+                          <div class="hc-citizen-advisory-text">
+                            ${DashboardCitizenView.escape(service.advisory)}
+                          </div>
                         </div>
 
-                        <span
-                          class="status-tag status-tag-normal"
-                        >
-                          ${item.status}
-                        </span>
-
                       </div>
-
-                      <div
-                        style="
-                          display:flex;
-                          align-items:center;
-                          gap:10px;
-                          margin-top:10px;
-                        "
-                      >
-
-                        <span class="font-mono text-accent">
-                          ${item.window}
-                        </span>
-
-                        <span class="text-xs text-secondary">
-                          Expected service window
-                        </span>
-
-                      </div>
-
                     </div>
 
-                  `).join('')}
+                  </div>
 
                 </div>
 
+              </article>
 
-                <div class="notice-box-subtle mt-4">
 
-                  <span class="text-xs text-muted">
+              <article class="hc-citizen-card">
 
-                    This timetable is a prototype service schedule
-                    for the current Sadashiv Nagar demonstration.
-                    Official municipal scheduling data can replace
-                    it when the service feed is connected.
+                <div class="hc-citizen-card-head">
 
-                  </span>
+                  <div class="hc-citizen-card-title-wrap">
+
+                    <div class="hc-citizen-icon-box">
+                      ${Icons.alertCircle('icon')}
+                    </div>
+
+                    <div>
+                      <h2 class="hc-citizen-card-title">
+                        Service information
+                      </h2>
+
+                      <p class="hc-citizen-card-subtitle">
+                        Area-level status
+                      </p>
+                    </div>
+
+                  </div>
 
                 </div>
 
-              </div>
+                <div class="hc-citizen-card-body">
+
+                  <div class="hc-citizen-meta-list">
+
+                    <div class="hc-citizen-meta-row">
+                      <span class="hc-citizen-meta-label">Area</span>
+                      <span class="hc-citizen-meta-value">
+                        ${DashboardCitizenView.escape(service.name)}
+                      </span>
+                    </div>
+
+                    <div class="hc-citizen-meta-row">
+                      <span class="hc-citizen-meta-label">Service state</span>
+                      <span class="hc-citizen-meta-value">
+                        ${DashboardCitizenView.escape(service.serviceStatus)}
+                      </span>
+                    </div>
+
+                    <div class="hc-citizen-meta-row">
+                      <span class="hc-citizen-meta-label">Last update</span>
+                      <span class="hc-citizen-meta-value">
+                        ${DashboardCitizenView.escape(service.lastUpdate)}
+                      </span>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </article>
 
             </div>
 
+          </section>
 
-            <div class="dash-card">
 
-              <div class="dash-card-header">
+          <!-- KPI / SUMMARY -->
+          <section class="hc-citizen-section">
 
-                <div class="dash-card-title-wrap">
+            <div class="hc-citizen-metrics">
 
-                  <div class="icon-box">
+              <article class="hc-citizen-metric">
+
+                <div class="hc-citizen-metric-head">
+                  <span class="hc-citizen-metric-label">
+                    SERVICE STATUS
+                  </span>
+
+                  <span class="hc-citizen-metric-icon">
+                    ${Icons.check('icon')}
+                  </span>
+                </div>
+
+                <div class="hc-citizen-metric-value small">
+                  ${DashboardCitizenView.escape(service.serviceStatus)}
+                </div>
+
+                <div class="hc-citizen-metric-meta">
+                  ${DashboardCitizenView.escape(service.scheduleStatus)}
+                </div>
+
+              </article>
+
+
+              <article class="hc-citizen-metric">
+
+                <div class="hc-citizen-metric-head">
+                  <span class="hc-citizen-metric-label">
+                    NEXT SUPPLY WINDOW
+                  </span>
+
+                  <span class="hc-citizen-metric-icon">
+                    ${Icons.pipeline('icon')}
+                  </span>
+                </div>
+
+                <div class="hc-citizen-metric-value">
+                  ${DashboardCitizenView.escape(service.nextWindow)}
+                </div>
+
+                <div class="hc-citizen-metric-meta">
+                  Current prototype schedule
+                </div>
+
+              </article>
+
+
+              <article class="hc-citizen-metric">
+
+                <div class="hc-citizen-metric-head">
+                  <span class="hc-citizen-metric-label">
+                    MY REPORTS
+                  </span>
+
+                  <span class="hc-citizen-metric-icon">
+                    ${Icons.fileText('icon')}
+                  </span>
+                </div>
+
+                <div class="hc-citizen-metric-value">
+                  ${reports.length}
+                </div>
+
+                <div class="hc-citizen-metric-meta">
+                  ${activeReports} active · ${resolvedReports} resolved
+                </div>
+
+              </article>
+
+
+              <article class="hc-citizen-metric">
+
+                <div class="hc-citizen-metric-head">
+                  <span class="hc-citizen-metric-label">
+                    SERVICE UPDATES
+                  </span>
+
+                  <span class="hc-citizen-metric-icon">
                     ${Icons.alertCircle('icon')}
-                  </div>
-
-                  <div>
-
-                    <h2 class="dash-card-title">
-                      Service Advisories
-                    </h2>
-
-                    <p class="dash-card-subtitle">
-                      Notices relevant to the selected area
-                    </p>
-
-                  </div>
-
+                  </span>
                 </div>
 
-              </div>
-
-
-              <div class="dash-card-body">
-
-                <div class="info-banner">
-
-                  ${Icons.check('icon')}
-
-                  <div>
-
-                    <div class="font-semibold text-sm">
-                      No active disruption reported
-                    </div>
-
-                    <div class="text-xs text-secondary mt-1">
-                      ${service.advisory}
-                    </div>
-
-                  </div>
-
+                <div class="hc-citizen-metric-value small">
+                  ONLINE
                 </div>
 
-
-                <div class="meta-data-table mt-4">
-
-                  <div class="meta-row">
-
-                    <span class="meta-label">
-                      Area
-                    </span>
-
-                    <span class="meta-value text-accent">
-                      ${service.name}
-                    </span>
-
-                  </div>
-
-
-                  <div class="meta-row">
-
-                    <span class="meta-label">
-                      Service state
-                    </span>
-
-                    <span class="meta-value">
-                      ${service.serviceStatus}
-                    </span>
-
-                  </div>
-
-
-                  <div class="meta-row">
-
-                    <span class="meta-label">
-                      Last update
-                    </span>
-
-                    <span class="meta-value text-muted">
-                      ${service.lastUpdate}
-                    </span>
-
-                  </div>
-
+                <div class="hc-citizen-metric-meta">
+                  Advisory channel available
                 </div>
 
-              </div>
+              </article>
 
             </div>
 
-          </div>
+          </section>
 
 
-          <!-- =====================================================
-               REPORT INFORMATION
-          ====================================================== -->
+          <!-- SCHEDULE + ADVISORY -->
+          <section class="hc-citizen-section">
 
-          <div class="dash-card mt-8">
+            <div class="hc-citizen-two-col">
 
-            <div class="dash-card-header">
+              <article class="hc-citizen-card">
 
-              <div class="dash-card-title-wrap">
+                <div class="hc-citizen-card-head">
 
-                <div class="icon-box">
-                  ${Icons.leakAlert('icon')}
-                </div>
+                  <div class="hc-citizen-card-title-wrap">
 
-                <div>
+                    <div class="hc-citizen-icon-box">
+                      ${Icons.pipeline('icon')}
+                    </div>
 
-                  <h2 class="dash-card-title">
-                    Report a Water Issue
-                  </h2>
+                    <div>
+                      <h2 class="hc-citizen-card-title">
+                        Water Supply Schedule
+                      </h2>
 
-                  <p class="dash-card-subtitle">
-                    Help municipal operators investigate
-                    local water-service problems
-                  </p>
+                      <p class="hc-citizen-card-subtitle">
+                        Service timetable for ${DashboardCitizenView.escape(service.name)}
+                      </p>
+                    </div>
 
-                </div>
-
-              </div>
-
-
-              <button
-                class="btn btn-primary btn-sm"
-                onclick="
-                  DashboardCitizenView.openReportModal();
-                "
-              >
-
-                ${Icons.plus('icon')}
-
-                <span>
-                  New Report
-                </span>
-
-              </button>
-
-            </div>
-
-
-            <div class="dash-card-body">
-
-              <div class="dashboard-grid-2col">
-
-                <div>
-
-                  <div class="font-semibold text-sm">
-                    What makes a report useful?
                   </div>
 
-                  <p class="text-xs text-secondary mt-2">
+                </div>
 
-                    Describe what you observed and, when possible,
-                    attach a photograph and capture your location.
-                    This gives the municipal team both visual and
-                    geographic context.
+                <div class="hc-citizen-card-body">
 
-                  </p>
+                  <div class="hc-citizen-schedule">
+
+                    ${service.schedule.map(item => `
+
+                      <div class="hc-citizen-schedule-row">
+
+                        <div>
+                          <div class="hc-citizen-schedule-day">
+                            ${DashboardCitizenView.escape(item.day)}
+                          </div>
+
+                          <div class="hc-citizen-schedule-window">
+                            ${DashboardCitizenView.escape(item.window)}
+                          </div>
+                        </div>
+
+                        <span class="hc-citizen-tag">
+                          ${DashboardCitizenView.escape(item.status)}
+                        </span>
+
+                      </div>
+
+                    `).join('')}
+
+                  </div>
+
+                  <div class="hc-citizen-notice" style="margin-top:12px;margin-bottom:0;">
+                    ${Icons.infoCircle ? Icons.infoCircle('icon') : Icons.alertCircle('icon')}
+                    <span>
+                      This is a prototype service schedule for the current Sadashiv Nagar demonstration. Official municipal scheduling data can replace it when a service feed is connected.
+                    </span>
+                  </div>
 
                 </div>
 
+              </article>
 
-                <div class="notice-box-subtle">
 
-                  <span class="text-xs text-secondary">
+              <article class="hc-citizen-card">
 
-                    <strong>
-                      Recommended evidence:
-                    </strong>
+                <div class="hc-citizen-card-head">
 
-                    issue category +
-                    description +
-                    photo +
-                    location +
-                    submission time.
+                  <div class="hc-citizen-card-title-wrap">
 
+                    <div class="hc-citizen-icon-box">
+                      ${Icons.alertCircle('icon')}
+                    </div>
+
+                    <div>
+                      <h2 class="hc-citizen-card-title">
+                        Service Advisories
+                      </h2>
+
+                      <p class="hc-citizen-card-subtitle">
+                        Notices relevant to the selected area
+                      </p>
+                    </div>
+
+                  </div>
+
+                  <span class="hc-citizen-tag">
+                    CURRENT
                   </span>
 
                 </div>
 
-              </div>
+                <div class="hc-citizen-card-body">
+
+                  <div class="hc-citizen-advisory">
+
+                    ${Icons.check('icon')}
+
+                    <div>
+                      <div class="hc-citizen-advisory-label">
+                        No active disruption reported
+                      </div>
+
+                      <div class="hc-citizen-advisory-text">
+                        ${DashboardCitizenView.escape(service.advisory)}
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <div class="hc-citizen-meta-list" style="margin-top:12px;">
+
+                    <div class="hc-citizen-meta-row">
+                      <span class="hc-citizen-meta-label">Area</span>
+                      <span class="hc-citizen-meta-value">
+                        ${DashboardCitizenView.escape(service.name)}
+                      </span>
+                    </div>
+
+                    <div class="hc-citizen-meta-row">
+                      <span class="hc-citizen-meta-label">Service state</span>
+                      <span class="hc-citizen-meta-value">
+                        ${DashboardCitizenView.escape(service.serviceStatus)}
+                      </span>
+                    </div>
+
+                    <div class="hc-citizen-meta-row">
+                      <span class="hc-citizen-meta-label">Last update</span>
+                      <span class="hc-citizen-meta-value">
+                        ${DashboardCitizenView.escape(service.lastUpdate)}
+                      </span>
+                    </div>
+
+                  </div>
+
+                </div>
+
+              </article>
 
             </div>
 
-          </div>
+          </section>
 
 
-          <!-- =====================================================
-               MY REPORTS
-          ====================================================== -->
+          <!-- REPORT CTA -->
+          <section class="hc-citizen-section">
 
-          <div class="dash-card mt-8">
+            <article class="hc-citizen-card">
 
-            <div class="dash-card-header">
+              <div class="hc-citizen-card-body">
 
-              <div class="dash-card-title-wrap">
+                <div class="hc-citizen-report-cta">
 
-                <div class="icon-box">
-                  ${Icons.fileText('icon')}
-                </div>
+                  <div class="hc-citizen-report-cta-copy">
 
-                <div>
+                    <div class="hc-citizen-kicker">
+                      COMMUNITY INPUT
+                    </div>
 
-                  <h2 class="dash-card-title">
-                    My Reports
-                  </h2>
+                    <div class="hc-citizen-report-cta-title">
+                      Report a water-service issue
+                    </div>
 
-                  <p class="dash-card-subtitle">
-                    Track reports submitted for ${service.name}
-                  </p>
+                    <div class="hc-citizen-report-cta-text">
+                      Submit the issue, location, optional photographs and GPS evidence so municipal operators can investigate it with geographic context.
+                    </div>
+
+                  </div>
+
+                  <button
+                    type="button"
+                    class="btn hc-citizen-primary"
+                    onclick="
+                      DashboardCitizenView.openReportModal();
+                    "
+                  >
+                    ${Icons.plus('icon')}
+                    <span>New Report</span>
+                  </button>
 
                 </div>
 
               </div>
 
+            </article>
+
+          </section>
+
+
+          <!-- MY REPORTS -->
+          <section class="hc-citizen-section">
+
+            <div class="hc-citizen-section-head">
+
+              <div>
+                <div class="hc-citizen-kicker">
+                  REPORT HISTORY
+                </div>
+
+                <div class="hc-citizen-section-title">
+                  My Reports
+                </div>
+
+                <p class="hc-citizen-section-copy">
+                  Reports submitted for ${DashboardCitizenView.escape(service.name)}.
+                </p>
+              </div>
 
               <button
                 class="btn btn-secondary btn-sm"
@@ -1128,292 +1815,205 @@ const DashboardCitizenView = {
                   DashboardCitizenView.loadReports();
                 "
               >
+                ${Icons.refresh ? Icons.refresh('icon') : ''}
                 Refresh
               </button>
 
             </div>
 
+            <article class="hc-citizen-card">
 
-            <div class="dash-card-body">
+              <div class="hc-citizen-card-body">
 
-              ${reportError}
+                ${reportError}
 
-              ${reportLoading}
+                ${reportLoading}
 
+                ${
+                  !state.reportsLoading &&
+                  reports.length === 0
+                    ? `
+                      <div class="hc-citizen-empty">
 
-              ${
-                !state.reportsLoading &&
-                reports.length === 0
-                  ? `
+                        <div class="hc-citizen-empty-icon">
+                          ${Icons.fileText('icon')}
+                        </div>
 
-                    <div class="empty-state-box">
+                        <div class="hc-citizen-empty-title">
+                          No reports submitted
+                        </div>
 
-                      ${Icons.fileText('icon')}
+                        <div class="hc-citizen-empty-copy">
+                          Your submitted water-service reports will appear here with their current status.
+                        </div>
 
-                      <div
-                        class="font-medium text-sm mt-3"
-                      >
-                        No Reports Submitted
                       </div>
+                    `
+                    : ''
+                }
 
-                      <p
-                        class="text-xs text-muted mt-1"
-                      >
-                        Your submitted water-service reports
-                        will appear here with their current status.
-                      </p>
+                ${
+                  !state.reportsLoading &&
+                  reports.length > 0
+                    ? `
+                      <div class="hc-citizen-table-wrap">
 
-                    </div>
+                        <table class="data-table">
 
-                  `
-                  : ''
-              }
+                          <thead>
+                            <tr>
+                              <th>Report ID</th>
+                              <th>Issue</th>
+                              <th>Evidence</th>
+                              <th>Location</th>
+                              <th>Date</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
 
+                          <tbody>
 
-              ${
-                !state.reportsLoading &&
-                reports.length > 0
-                  ? `
+                            ${reports.map(report => {
 
-                    <div class="table-responsive">
+                              const reportId =
+                                report.id || '—';
 
-                      <table class="data-table">
+                              const category =
+                                report.category || '—';
 
-                        <thead>
+                              const location =
+                                report.location || '—';
 
-                          <tr>
+                              const status =
+                                report.status || 'Submitted';
 
-                            <th>
-                              Report ID
-                            </th>
+                              const createdAt =
+                                report.created_at ||
+                                report.submittedAt ||
+                                report.date ||
+                                '';
 
-                            <th>
-                              Issue
-                            </th>
+                              let displayDate =
+                                createdAt;
 
-                            <th>
-                              Evidence
-                            </th>
+                              try {
 
-                            <th>
-                              Location
-                            </th>
+                                if (createdAt) {
 
-                            <th>
-                              Date
-                            </th>
+                                  displayDate =
+                                    new Date(
+                                      createdAt
+                                    ).toLocaleDateString(
+                                      'en-IN'
+                                    );
 
-                            <th>
-                              Status
-                            </th>
+                                }
 
-                          </tr>
-
-                        </thead>
-
-
-                        <tbody>
-
-                          ${reports.map(report => {
-
-                            const reportId =
-                              report.id ||
-                              '—';
-
-
-                            const category =
-                              report.category ||
-                              '—';
-
-
-                            const location =
-                              report.location ||
-                              '—';
-
-
-                            const status =
-                              report.status ||
-                              'Submitted';
-
-
-                            const createdAt =
-                              report.created_at ||
-                              report.submittedAt ||
-                              report.date ||
-                              '';
-
-
-                            let displayDate =
-                              createdAt;
-
-
-                            try {
-
-                              if (createdAt) {
+                              } catch (dateError) {
 
                                 displayDate =
-                                  new Date(
-                                    createdAt
-                                  ).toLocaleDateString(
-                                    'en-IN'
-                                  );
+                                  createdAt;
 
                               }
 
-                            } catch (dateError) {
+                              const imageCount =
+                                report.evidence_image
+                                  ? 1
+                                  : (
+                                      report.imageCount ||
+                                      0
+                                    );
 
-                              displayDate =
-                                createdAt;
+                              const hasGPS =
+                                report.latitude !== null &&
+                                report.latitude !== undefined &&
+                                report.longitude !== null &&
+                                report.longitude !== undefined;
 
-                            }
+                              return `
 
+                                <tr>
 
-                            const imageCount =
-                              report.evidence_image
-                                ? 1
-                                : (
-                                    report.imageCount ||
-                                    0
-                                  );
+                                  <td class="font-mono text-accent text-xs font-semibold">
+                                    ${DashboardCitizenView.escape(reportId)}
+                                  </td>
 
+                                  <td>
+                                    <span class="category-pill">
+                                      ${DashboardCitizenView.escape(category)}
+                                    </span>
+                                  </td>
 
-                            const hasGPS =
-                              report.latitude !== null &&
-                              report.latitude !== undefined &&
-                              report.longitude !== null &&
-                              report.longitude !== undefined;
+                                  <td class="text-xs">
+                                    ${
+                                      imageCount
+                                        ? `
+                                          ${imageCount}
+                                          photo${imageCount > 1 ? 's' : ''}
+                                        `
+                                        : 'No photo'
+                                    }
+                                    ${hasGPS ? ' · GPS' : ''}
+                                  </td>
 
+                                  <td class="text-sm">
+                                    ${DashboardCitizenView.escape(location)}
+                                  </td>
 
-                            return `
+                                  <td class="font-mono text-xs text-muted">
+                                    ${DashboardCitizenView.escape(displayDate)}
+                                  </td>
 
-                              <tr>
+                                  <td>
+                                    <span
+                                      class="
+                                        status-tag
+                                        ${
+                                          status === 'Resolved'
+                                            ? 'status-tag-normal'
+                                            : 'status-tag-review'
+                                        }
+                                      "
+                                    >
+                                      ${DashboardCitizenView.escape(status)}
+                                    </span>
+                                  </td>
 
-                                <td
-                                  class="
-                                    font-mono
-                                    text-accent
-                                    text-xs
-                                    font-semibold
-                                  "
-                                >
-                                  ${DashboardCitizenView.escape(
-                                    reportId
-                                  )}
-                                </td>
+                                </tr>
 
+                              `;
 
-                                <td>
+                            }).join('')}
 
-                                  <span class="category-pill">
-                                    ${DashboardCitizenView.escape(
-                                      category
-                                    )}
-                                  </span>
+                          </tbody>
 
-                                </td>
+                        </table>
 
+                      </div>
+                    `
+                    : ''
+                }
 
-                                <td class="text-xs">
+              </div>
 
-                                  ${
-                                    imageCount
-                                      ? `
-                                        ${imageCount}
-                                        photo${imageCount > 1 ? 's' : ''}
-                                      `
-                                      : 'No photo'
-                                  }
+            </article>
 
-                                  ${
-                                    hasGPS
-                                      ? ' · GPS'
-                                      : ''
-                                  }
-
-                                </td>
-
-
-                                <td class="text-sm">
-
-                                  ${DashboardCitizenView.escape(
-                                    location
-                                  )}
-
-                                </td>
-
-
-                                <td
-                                  class="
-                                    font-mono
-                                    text-xs
-                                    text-muted
-                                  "
-                                >
-
-                                  ${DashboardCitizenView.escape(
-                                    displayDate
-                                  )}
-
-                                </td>
-
-
-                                <td>
-
-                                  <span
-                                    class="
-                                      status-tag
-                                      ${
-                                        status === 'Resolved'
-                                          ? 'status-tag-normal'
-                                          : 'status-tag-review'
-                                      }
-                                    "
-                                  >
-                                    ${DashboardCitizenView.escape(
-                                      status
-                                    )}
-                                  </span>
-
-                                </td>
-
-                              </tr>
-
-                            `;
-
-                          }).join('')}
-
-                        </tbody>
-
-                      </table>
-
-                    </div>
-
-                  `
-                  : ''
-              }
-
-            </div>
-
-          </div>
+          </section>
 
         </div>
 
 
-        <!-- =====================================================
-             REPORT MODAL
-        ====================================================== -->
-
+        <!-- REPORT MODAL -->
         <div
           id="report-issue-modal"
-          class="modal-backdrop"
+          class="modal-backdrop hc-citizen-modal-backdrop"
           style="
             display:none;
             position:fixed;
             inset:0;
             z-index:9999;
             box-sizing:border-box;
-            padding:20px;
-            background:rgba(0,0,0,.72);
+            padding:16px;
             align-items:center;
             justify-content:center;
             overflow:auto;
@@ -1424,13 +2024,11 @@ const DashboardCitizenView = {
         >
 
           <div
-            class="modal-dialog"
+            class="modal-dialog hc-citizen-modal"
             role="dialog"
             aria-modal="true"
             aria-labelledby="report-modal-title"
             style="
-              width:min(720px,100%);
-              max-height:calc(100vh - 40px);
               margin:auto;
               display:flex;
               flex-direction:column;
@@ -1441,17 +2039,7 @@ const DashboardCitizenView = {
             onclick="event.stopPropagation();"
           >
 
-
-            <div
-              class="modal-header"
-              style="
-                flex:0 0 auto;
-                display:flex;
-                align-items:flex-start;
-                justify-content:space-between;
-                gap:16px;
-              "
-            >
+            <div class="modal-header">
 
               <div
                 class="modal-title-wrap"
@@ -1459,11 +2047,11 @@ const DashboardCitizenView = {
                   min-width:0;
                   display:flex;
                   align-items:center;
-                  gap:12px;
+                  gap:11px;
                 "
               >
 
-                <div class="icon-box">
+                <div class="hc-citizen-icon-box">
                   ${Icons.leakAlert('icon')}
                 </div>
 
@@ -1484,7 +2072,6 @@ const DashboardCitizenView = {
 
               </div>
 
-
               <button
                 type="button"
                 aria-label="Close report form"
@@ -1493,17 +2080,17 @@ const DashboardCitizenView = {
                   DashboardCitizenView.closeReportModal();
                 "
                 style="
-                  flex:0 0 38px;
-                  width:38px;
-                  height:38px;
+                  flex:0 0 34px;
+                  width:34px;
+                  height:34px;
                   display:flex;
                   align-items:center;
                   justify-content:center;
-                  border:1px solid rgba(255,255,255,.16);
-                  border-radius:8px;
-                  background:transparent;
-                  color:inherit;
-                  font-size:28px;
+                  border:1px solid rgba(72,122,160,.24);
+                  border-radius:7px;
+                  background:rgba(4,16,28,.25);
+                  color:#a9c0ce;
+                  font-size:24px;
                   line-height:1;
                   cursor:pointer;
                   padding:0;
@@ -1528,7 +2115,6 @@ const DashboardCitizenView = {
               "
             >
 
-
               <div
                 class="modal-body"
                 style="
@@ -1536,251 +2122,232 @@ const DashboardCitizenView = {
                   min-height:0;
                   overflow-y:auto;
                   overflow-x:hidden;
-                  padding-right:6px;
                 "
               >
 
+                <div class="hc-citizen-form-grid">
 
-                <!-- CATEGORY -->
+                  <div class="hc-citizen-form-section">
 
-                <div class="form-group">
+                    <div class="hc-citizen-form-section-title">
+                      ISSUE
+                    </div>
 
-                  <label
-                    class="form-label"
-                    for="report-category"
-                  >
-                    Issue Category
-                  </label>
+                    <div class="form-group">
 
-                  <select
-                    id="report-category"
-                    class="form-select"
-                    required
-                  >
+                      <label
+                        class="form-label"
+                        for="report-category"
+                      >
+                        Issue Category
+                      </label>
 
-                    <option value="Leakage">
-                      Pipeline Leakage
-                    </option>
+                      <select
+                        id="report-category"
+                        class="form-select"
+                        required
+                      >
+                        <option value="Leakage">
+                          Pipeline Leakage
+                        </option>
 
-                    <option value="Low Pressure">
-                      Low Water Pressure
-                    </option>
+                        <option value="Low Pressure">
+                          Low Water Pressure
+                        </option>
 
-                    <option value="Supply Interruption">
-                      No Water / Supply Interruption
-                    </option>
+                        <option value="Supply Interruption">
+                          No Water / Supply Interruption
+                        </option>
 
-                    <option value="Water Quality">
-                      Water Quality Concern
-                    </option>
+                        <option value="Water Quality">
+                          Water Quality Concern
+                        </option>
 
-                    <option value="Overflow">
-                      Overflow / Wastage
-                    </option>
+                        <option value="Overflow">
+                          Overflow / Wastage
+                        </option>
 
-                    <option value="Infrastructure Damage">
-                      Damaged Water Infrastructure
-                    </option>
+                        <option value="Infrastructure Damage">
+                          Damaged Water Infrastructure
+                        </option>
 
-                    <option value="Other">
-                      Other
-                    </option>
+                        <option value="Other">
+                          Other
+                        </option>
+                      </select>
 
-                  </select>
-
-                </div>
-
-
-                <!-- LOCATION -->
-
-                <div class="form-group">
-
-                  <label
-                    class="form-label"
-                    for="report-location"
-                  >
-                    Location / Street Address
-                  </label>
-
-                  <input
-                    type="text"
-                    id="report-location"
-                    class="form-input"
-                    placeholder="
-                      e.g. Main Road, Sadashiv Nagar
-                    "
-                    required
-                  />
-
-                </div>
-
-
-                <!-- DESCRIPTION -->
-
-                <div class="form-group">
-
-                  <label
-                    class="form-label"
-                    for="report-description"
-                  >
-                    Describe the Issue
-                  </label>
-
-                  <textarea
-                    id="report-description"
-                    class="form-textarea"
-                    rows="4"
-                    placeholder="
-                      Describe what you observed, when it started,
-                      and any visible impact...
-                    "
-                    required
-                  ></textarea>
-
-                </div>
-
-
-                <!-- IMAGES -->
-
-                <div class="form-group">
-
-                  <label
-                    class="form-label"
-                    for="report-images"
-                  >
-                    Visual Evidence
-                  </label>
-
-                  <input
-                    type="file"
-                    id="report-images"
-                    class="form-input"
-                    accept="image/*"
-                    capture="environment"
-                    multiple
-                    onchange="
-                      DashboardCitizenView.handleImageSelection(event);
-                    "
-                  />
-
-                  <div class="text-xs text-muted mt-2">
-
-                    Add up to 3 photographs.
-                    Images are compressed locally for this prototype.
+                    </div>
 
                   </div>
 
 
-                  <div
-                    id="report-image-preview"
-                    style="
-                      display:grid;
-                      grid-template-columns:repeat(3,minmax(0,1fr));
-                      gap:10px;
-                      margin-top:12px;
-                    "
-                  ></div>
+                  <div class="hc-citizen-form-section">
 
-                </div>
+                    <div class="hc-citizen-form-section-title">
+                      LOCATION
+                    </div>
 
+                    <div class="form-group">
 
-                <!-- GPS -->
+                      <label
+                        class="form-label"
+                        for="report-location"
+                      >
+                        Location / Street Address
+                      </label>
 
-                <div class="form-group">
+                      <input
+                        type="text"
+                        id="report-location"
+                        class="form-input"
+                        placeholder="e.g. Main Road, Sadashiv Nagar"
+                        required
+                      />
 
-                  <div
-                    style="
-                      display:flex;
-                      align-items:center;
-                      justify-content:space-between;
-                      gap:12px;
-                      flex-wrap:wrap;
-                    "
-                  >
+                    </div>
 
-                    <label
-                      class="form-label"
-                      style="margin:0;"
-                    >
-                      Location Evidence
-                    </label>
+                  </div>
 
 
-                    <button
-                      type="button"
-                      class="btn btn-secondary btn-sm"
-                      onclick="
-                        DashboardCitizenView.captureLocation();
-                      "
-                    >
+                  <div class="hc-citizen-form-section hc-citizen-form-full">
 
-                      ${Icons.map('icon')}
+                    <div class="hc-citizen-form-section-title">
+                      OBSERVATION
+                    </div>
 
-                      <span>
-                        Capture My Location
+                    <div class="form-group">
+
+                      <label
+                        class="form-label"
+                        for="report-description"
+                      >
+                        Describe the Issue
+                      </label>
+
+                      <textarea
+                        id="report-description"
+                        class="form-textarea"
+                        rows="4"
+                        placeholder="Describe what you observed, when it started, and any visible impact..."
+                        required
+                      ></textarea>
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="hc-citizen-form-section">
+
+                    <div class="hc-citizen-form-section-title">
+                      VISUAL EVIDENCE
+                    </div>
+
+                    <div class="form-group">
+
+                      <label
+                        class="form-label"
+                        for="report-images"
+                      >
+                        Photographs
+                      </label>
+
+                      <input
+                        type="file"
+                        id="report-images"
+                        class="form-input"
+                        accept="image/*"
+                        capture="environment"
+                        multiple
+                        onchange="
+                          DashboardCitizenView.handleImageSelection(event);
+                        "
+                      />
+
+                      <div class="text-xs text-muted mt-2">
+                        Add up to 3 photographs. Images are compressed locally for this prototype.
+                      </div>
+
+                      <div
+                        id="report-image-preview"
+                        style="
+                          display:grid;
+                          grid-template-columns:repeat(3,minmax(0,1fr));
+                          gap:8px;
+                          margin-top:10px;
+                        "
+                      ></div>
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="hc-citizen-form-section">
+
+                    <div class="hc-citizen-form-section-title">
+                      LOCATION EVIDENCE
+                    </div>
+
+                    <div class="form-group">
+
+                      <button
+                        type="button"
+                        class="btn btn-secondary btn-sm"
+                        onclick="
+                          DashboardCitizenView.captureLocation();
+                        "
+                      >
+                        ${Icons.map('icon')}
+                        <span>Capture My Location</span>
+                      </button>
+
+                      <div
+                        id="report-location-status"
+                        class="hc-citizen-notice"
+                        style="margin-top:10px;margin-bottom:0;"
+                      >
+                        <span class="text-xs text-secondary">
+                          GPS location has not been captured.
+                        </span>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="hc-citizen-form-full">
+
+                    <div class="hc-citizen-dashboard-note">
+
+                      ${Icons.shield('icon')}
+
+                      <span class="text-xs text-secondary">
+                        Visual evidence and GPS coordinates strengthen the report by providing municipal operators with geographic and observational context.
                       </span>
 
-                    </button>
+                    </div>
 
-                  </div>
-
-
-                  <div
-                    id="report-location-status"
-                    class="notice-box-subtle mt-3"
-                  >
-
-                    <span class="text-xs text-secondary">
-                      GPS location has not been captured.
-                    </span>
+                    <div
+                      id="report-submit-error"
+                      style="display:none;"
+                    ></div>
 
                   </div>
 
                 </div>
-
-
-                <!-- NOTICE -->
-
-                <div class="notice-box-subtle">
-
-                  ${Icons.shield('icon')}
-
-                  <span class="text-xs text-secondary">
-
-                    Visual evidence and GPS coordinates strengthen
-                    the report by providing municipal operators with
-                    geographic and observational context.
-
-                  </span>
-
-                </div>
-
-
-                <!-- SUBMISSION ERROR -->
-
-                <div
-                  id="report-submit-error"
-                  style="display:none;"
-                ></div>
-
 
               </div>
 
 
-              <!-- FOOTER -->
+              <div class="modal-footer">
 
-              <div
-                class="modal-footer"
-                style="
-                  flex:0 0 auto;
-                  display:flex;
-                  align-items:center;
-                  justify-content:flex-end;
-                  gap:12px;
-                  padding-top:14px;
-                  border-top:1px solid rgba(255,255,255,.08);
-                "
-              >
+                <div style="flex:1;min-width:0;">
+                  <span class="text-xs text-muted">
+                    Your report will be stored in the municipal system.
+                  </span>
+                </div>
 
                 <button
                   type="button"
@@ -1792,19 +2359,13 @@ const DashboardCitizenView = {
                   Cancel
                 </button>
 
-
                 <button
                   type="submit"
-                  class="btn btn-primary"
+                  class="btn hc-citizen-primary"
                   id="submit-citizen-report"
                 >
-
-                  <span>
-                    Submit Report
-                  </span>
-
+                  <span>Submit Report</span>
                   ${Icons.arrowRight('icon')}
-
                 </button>
 
               </div>

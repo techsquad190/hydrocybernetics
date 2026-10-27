@@ -1,0 +1,933 @@
+/* ==========================================================
+   HydroCybernetics — Mobile UX Foundation
+   Scope: presentation/layout only.
+   No API, routing, hydraulic, database, or component logic.
+   ========================================================== */
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-width: 0;
+}
+
+/* Keep interactive controls comfortable for touch. */
+@media (max-width: 767px) {
+  .btn,
+  button,
+  select,
+  input,
+  textarea {
+    min-height: 42px;
+  }
+
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* ---------- Global app header ---------- */
+  .app-header {
+    height: 60px;
+  }
+
+  .header-inner {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .brand-wrapper {
+    min-width: 0;
+    gap: 9px;
+  }
+
+  .brand-icon {
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+  }
+
+  .brand-title {
+    font-size: 15px;
+    white-space: nowrap;
+  }
+
+  .nav-actions {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* ---------- Municipal shell ---------- */
+  .municipal-layout {
+    flex-direction: column;
+    min-height: calc(100vh - var(--header-height));
+  }
+
+  .municipal-sidebar {
+    width: 100%;
+    max-width: none;
+    flex: 0 0 auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .sidebar-header {
+    padding: 12px 16px;
+  }
+
+  .sidebar-brand {
+    min-width: 0;
+  }
+
+  .sidebar-brand-title {
+    font-size: 13px;
+  }
+
+  .sidebar-brand-badge {
+    font-size: 8px;
+  }
+
+  .sidebar-nav-section {
+    padding: 8px 10px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 0 0 auto;
+  }
+
+  .sidebar-section-label {
+    display: none;
+  }
+
+  .sidebar-menu {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 6px;
+    width: max-content;
+  }
+
+  .sidebar-link {
+    min-height: 42px;
+    padding: 9px 11px;
+    gap: 7px;
+    white-space: nowrap;
+    border-radius: 8px;
+    font-size: 12px;
+  }
+
+  .sidebar-link.active {
+    border-left: 0;
+    border-bottom: 2px solid var(--color-teal-400);
+  }
+
+  .sidebar-link .icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .municipal-main {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .municipal-topbar {
+    min-height: 52px;
+    height: auto;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+
+  .topbar-context {
+    min-width: 0;
+    gap: 7px;
+    overflow: hidden;
+  }
+
+  .context-zone-pill {
+    flex: 0 0 auto;
+  }
+
+  .context-divider {
+    display: none;
+  }
+
+  .context-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+  }
+
+  .topbar-actions {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .topbar-actions .btn {
+    min-height: 38px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .municipal-content {
+    padding: 16px 12px 28px;
+  }
+
+  /* ---------- General dashboard spacing ---------- */
+  .section-header {
+    margin-bottom: 20px;
+  }
+
+  .hero-section {
+    padding: 36px 0 30px;
+  }
+
+  .hero-grid {
+    gap: 28px;
+  }
+
+  .hero-supporting {
+    font-size: 15px;
+    margin-bottom: 24px;
+  }
+
+  .hero-cta-group {
+    width: 100%;
+  }
+
+  .hero-cta-group .btn {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  /* ---------- Cards / metrics ---------- */
+  .overview-cards-grid,
+  .dashboard-grid-2col {
+    gap: 12px;
+  }
+
+  .metric-card {
+    min-width: 0;
+  }
+
+  /* ---------- Tables: scroll rather than squeeze ---------- */
+  .table-responsive,
+  .data-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table {
+    min-width: 620px;
+  }
+
+  /* ---------- Modals ---------- */
+  .modal-backdrop {
+    padding: 12px;
+  }
+
+  .modal-dialog {
+    width: 100%;
+    max-width: none;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* ---------- Digital Twin ---------- */
+  .digital-twin-view {
+    gap: 12px;
+  }
+
+  .dt-header-card {
+    padding: 16px;
+    gap: 14px;
+    align-items: stretch;
+  }
+
+  .dt-title {
+    font-size: 19px;
+  }
+
+  .dt-subtitle {
+    font-size: 11px;
+  }
+
+  .dt-controls {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .dt-scenario-select {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+  }
+
+  .dt-grid {
+    gap: 12px;
+  }
+
+  .dt-map-wrap,
+  .dt-map {
+    min-height: 360px;
+    height: 360px;
+  }
+
+  .dt-legend {
+    gap: 10px 14px;
+    padding: 9px 12px;
+    font-size: 10px;
+  }
+
+  /* ---------- Citizen shell ---------- */
+  .hc-citizen-dashboard .hc-citizen-shell {
+    padding: 16px 12px 32px;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-hero-inner {
+    padding: 18px 16px;
+    gap: 16px;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-brand-icon {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-title {
+    font-size: 19px;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-subtitle {
+    font-size: 11px;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-actions {
+    width: 100%;
+    justify-content: stretch;
+    align-items: stretch;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-location {
+    width: 100%;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-location select {
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-primary {
+    width: 100%;
+  }
+
+  /* Safe-area support for modern phones. */
+  .app-footer {
+    padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-title {
+    font-size: 14px;
+  }
+
+  .municipal-content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .sidebar-nav-section {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .sidebar-link {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .dt-map-wrap,
+  .dt-map {
+    min-height: 320px;
+    height: 320px;
+  }
+
+  .hc-citizen-dashboard .hc-citizen-shell {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+/* ==========================================================
+   Mobile Simulation UX Fix
+   Scope: layout only. No simulation/API logic changes.
+   ========================================================== */
+
+@media (max-width: 767px) {
+  /* The simulation component contains desktop-oriented inline
+     layout rules, so explicitly override them at the mobile
+     breakpoint. */
+
+  .hc-simulation-header {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 15px 14px;
+  }
+
+  .hc-simulation-header-left {
+    min-width: 0;
+  }
+
+  .hc-simulation-title {
+    font-size: 14px;
+  }
+
+  .hc-simulation-subtitle {
+    max-width: none;
+    font-size: 9px;
+  }
+
+  .hc-simulation-status {
+    flex: 0 0 auto;
+    margin-top: 2px;
+  }
+
+  .hc-simulation-control {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 14px;
+    margin: 12px 10px 0;
+    padding: 14px;
+  }
+
+  .hc-simulation-control-copy {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .hc-simulation-control-title {
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .hc-simulation-control-copy p {
+    max-width: none;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .hc-simulation-control-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .hc-simulation-control-actions .hc-modern-scenario-group {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .hc-simulation-control-actions .analytics-scenario-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 5px;
+    font-size: 9px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  .hc-simulation-refresh {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+  }
+
+  /* The desktop simulation uses !important on its 4-column KPI
+     grid, so the mobile override also needs !important. */
+  .hc-simulation-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px;
+    margin: 12px 10px 0;
+  }
+
+  .hc-simulation-kpi-grid .analytics-engine-kpi {
+    min-height: 88px;
+    padding: 12px;
+  }
+
+  .hc-simulation-kpi-grid .analytics-engine-kpi-value {
+    font-size: 18px;
+  }
+
+  .hc-simulation-results-card {
+    margin: 16px 10px 0;
+  }
+
+  .hc-simulation-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .hc-simulation-section-heading h3 {
+    font-size: 14px;
+  }
+
+  .hc-simulation-section-heading p {
+    max-width: none;
+  }
+
+  .hc-simulation-results-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 10px 10px 0;
+  }
+
+  .hc-simulation-result-panel .analytics-engine-card-header {
+    padding: 13px 14px 10px;
+  }
+
+  .hc-simulation-result-panel .hc-modern-panel-body {
+    padding: 12px 14px 14px;
+  }
+
+  .hc-simulation-results-grid .data-table {
+    min-width: 0;
+    table-layout: auto;
+  }
+
+  .hc-simulation-results-grid .data-table th,
+  .hc-simulation-results-grid .data-table td {
+    padding: 8px 6px;
+    font-size: 9px;
+  }
+
+  .hc-simulation-comparison {
+    margin: 10px 10px 0;
+  }
+
+  .hc-simulation-source-strip {
+    margin: 12px 10px 12px;
+    padding: 11px 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .hc-simulation-control-actions .hc-modern-scenario-group {
+    grid-template-columns: 1fr;
+  }
+
+  .hc-simulation-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ==========================================================
+   Mobile Citizen Report Modal UX Fix
+   Scope: presentation/layout only.
+   No report, upload, GPS, PDF, API, or database logic changes.
+   ========================================================== */
+
+@media (max-width: 767px) {
+  .hc-citizen-modal-backdrop {
+    padding: 8px !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hc-citizen-modal {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: calc(100vh - 16px) !important;
+    border-radius: 12px !important;
+  }
+
+  .hc-citizen-modal .modal-header {
+    padding: 13px 14px;
+    gap: 10px;
+  }
+
+  .hc-citizen-modal .modal-title {
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .hc-citizen-modal .modal-subtitle {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .hc-citizen-modal .modal-body {
+    padding: 14px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .hc-citizen-modal .hc-citizen-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  .hc-citizen-modal .hc-citizen-form-full {
+    grid-column: 1 / -1 !important;
+  }
+
+  .hc-citizen-modal .hc-citizen-form-section {
+    min-width: 0;
+  }
+
+  .hc-citizen-modal .form-input,
+  .hc-citizen-modal .form-select,
+  .hc-citizen-modal .form-textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .hc-citizen-modal .form-textarea {
+    min-height: 94px;
+    resize: vertical;
+  }
+
+  .hc-citizen-modal .modal-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  .hc-citizen-modal .modal-footer > div:first-child {
+    display: none;
+  }
+
+  .hc-citizen-modal .modal-footer .btn,
+  .hc-citizen-modal .modal-footer .hc-citizen-primary {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .hc-citizen-modal .modal-footer .btn-secondary {
+    order: 2;
+  }
+
+  .hc-citizen-modal .modal-footer .hc-citizen-primary {
+    order: 1;
+  }
+
+  .hc-citizen-modal .hc-citizen-dashboard-note {
+    padding: 10px 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .hc-citizen-modal-backdrop {
+    padding: 5px !important;
+  }
+
+  .hc-citizen-modal {
+    max-height: calc(100vh - 10px) !important;
+  }
+
+  .hc-citizen-modal .modal-header,
+  .hc-citizen-modal .modal-body,
+  .hc-citizen-modal .modal-footer {
+    padding-left: 11px;
+    padding-right: 11px;
+  }
+}
+
+/* ==========================================================
+   Mobile Simulation — Scenario Divergence table fix
+   Scope: presentation/layout only.
+   No simulation/API/data logic changes.
+   ========================================================== */
+
+@media (max-width: 767px) {
+  /* The desktop divergence card uses two side-by-side columns.
+     Stack them on phones so each comparison table gets the full
+     available width. */
+  .dash-card .dashboard-grid-2col {
+    grid-template-columns: 1fr !important;
+    gap: 18px;
+  }
+
+  /* The generic mobile table rule intentionally protects wider
+     tables elsewhere. Scenario Divergence is compact enough to
+     fit all four columns, so override that rule here. */
+  .dash-card .dashboard-grid-2col .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .dash-card .dashboard-grid-2col .data-table {
+    width: 100%;
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+
+  .dash-card .dashboard-grid-2col .data-table th,
+  .dash-card .dashboard-grid-2col .data-table td {
+    padding: 8px 5px;
+    font-size: 9px;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .dash-card .dashboard-grid-2col .data-table th:nth-child(1),
+  .dash-card .dashboard-grid-2col .data-table td:nth-child(1) {
+    width: 18%;
+  }
+
+  .dash-card .dashboard-grid-2col .data-table th:nth-child(2),
+  .dash-card .dashboard-grid-2col .data-table td:nth-child(2),
+  .dash-card .dashboard-grid-2col .data-table th:nth-child(3),
+  .dash-card .dashboard-grid-2col .data-table td:nth-child(3) {
+    width: 28%;
+  }
+
+  .dash-card .dashboard-grid-2col .data-table th:nth-child(4),
+  .dash-card .dashboard-grid-2col .data-table td:nth-child(4) {
+    width: 26%;
+  }
+
+  .dash-card .dashboard-grid-2col .analytics-section-label {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .dash-card .dashboard-grid-2col .data-table th,
+  .dash-card .dashboard-grid-2col .data-table td {
+    padding-left: 4px;
+    padding-right: 4px;
+    font-size: 8px;
+  }
+}
+
+/* ==========================================================
+   Mobile Public/Landing Header Fix
+   Scope: public landing/auth header presentation only.
+   Prevents brand/navigation/action overlap on Android widths.
+   No routing, auth, API, or dashboard logic changes.
+   ========================================================== */
+
+@media (max-width: 767px) {
+  /* Target ONLY the public header: it contains the
+     "How It Works" navigation link. Citizen/Municipal
+     dashboard headers are intentionally excluded. */
+  .app-header:has(.nav-link[href="#how-it-works"]) {
+    height: auto;
+    min-height: 0;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .header-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 10px 0;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .brand-wrapper {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .brand-icon {
+    width: 25px;
+    height: 25px;
+    flex: 0 0 25px;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .brand-title {
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) nav {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-links {
+    display: flex;
+    width: max-content;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 18px;
+    padding: 2px 2px 4px;
+    margin: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-link {
+    flex: 0 0 auto;
+    font-size: 11px;
+    padding: 5px 0;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-actions .btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 8px;
+    justify-content: center;
+    gap: 6px;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-actions .btn .icon {
+    width: 15px;
+    height: 15px;
+    flex: 0 0 15px;
+  }
+
+  /* Give the landing hero enough separation from the now
+     multi-row public header. */
+  .app-header:has(.nav-link[href="#how-it-works"]) + .main-content .hero-section {
+    padding-top: 30px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-header:has(.nav-link[href="#how-it-works"]) .header-inner {
+    gap: 6px;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-links {
+    gap: 14px;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-actions {
+    gap: 6px;
+  }
+
+  .app-header:has(.nav-link[href="#how-it-works"]) .nav-actions .btn {
+    font-size: 9px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+}
+/* ============================================================
+   CITIZEN MOBILE HEADER
+   Prevent HydroCybernetics / Citizen Session overlap
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+  /* Citizen portal header */
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) {
+    height: auto;
+  }
+
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) .header-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  /* Brand gets its own row */
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) .brand-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) .brand-title {
+    font-size: 20px;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  /* Hide desktop navigation on the narrow citizen header */
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) nav {
+    display: none;
+  }
+
+  /* Session + sign-out become a separate row */
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) .nav-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 10px;
+    margin: 0;
+  }
+
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) .nav-actions > * {
+    min-width: 0;
+  }
+
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) .nav-actions .text-xs {
+    margin: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-header:has(.nav-link[href="#/citizen/dashboard"]) .nav-actions .btn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}

@@ -14,6 +14,10 @@
 
   <meta name="theme-color" content="#081220">
 
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
 
   <!-- =========================================================
        Typography
@@ -30,24 +34,47 @@
 
   <!-- =========================================================
        Leaflet
-       
+
        KEEP THIS because other existing application modules
        may still use Leaflet.
        ========================================================= -->
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin="">
 
 
   <!-- =========================================================
        CesiumJS
-       
-       Cesium is now the ONLY map / 3D visualization engine
-       used by the Digital Twin.
+
+       Cesium is the 3D visualization engine used by the
+       Digital Twin.
        ========================================================= -->
 
-  <link href="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+  <link
+    href="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Widgets/widgets.css"
+    rel="stylesheet">
 
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"></script>
+
+  <!-- =========================================================
+       Cesium Ion Configuration
+
+       IMPORTANT:
+       There must be ONLY ONE Cesium.Ion.defaultAccessToken
+       assignment in this file.
+
+       For your LOCAL copy:
+       replace YOUR_CESIUM_ION_TOKEN with your NEW token.
+
+       Do NOT commit the real token to a PUBLIC GitHub
+       repository.
+       ========================================================= -->
+
+  <script>
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IkJYWDZHdVpyUlFjU1FTLWwiLCJqdGkiOiJjMDhkZTI5ZS0xMWRjLTQ0OGUtODEyNy1lNDUzYTBmMjQ5ODgiLCJpZCI6NDc4OTU5LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODgzNTY5MjB9.f1U1SsGC4-rFLopEd57-H5qPWV10fWNUqPwk8W8X80o';
+  </script>
 
 
   <!-- =========================================================
@@ -65,6 +92,7 @@
   <link rel="stylesheet" href="css/network-visual.css">
 
   <link rel="stylesheet" href="css/digital-twin.css">
+  <link rel="stylesheet" href="css/mobile.css">
 
 </head>
 
@@ -92,32 +120,21 @@
 
   <!-- =========================================================
        Leaflet
-       
+
        Kept only for compatibility with other existing modules.
        It is NOT used by the Digital Twin.
        ========================================================= -->
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-
-
-  <!-- =========================================================
-       Cesium Ion Configuration
-       
-       IMPORTANT:
-       Replace the token below with your NEW Cesium token
-       after rotating the exposed token.
-       ========================================================= -->
-
-  <script>
-    Cesium.Ion.defaultAccessToken =
-      'YOUR_CESIUM_ION_TOKEN';
-  </script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""></script>
 
 
   <!-- =========================================================
        Application Views
-       
-       Cesium is already loaded BEFORE digital-twin.js.
+
+       Cesium is already loaded and configured BEFORE
+       digital-twin.js.
        ========================================================= -->
 
   <script src="js/views/landing.js"></script>
@@ -129,9 +146,11 @@
   <script src="js/views/dashboard-citizen.js"></script>
 
   <script src="js/views/digital-twin.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="js/views/dashboard-municipal.js"></script>
 
+  <!-- Chart.js is required by the municipal dashboard -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script src="js/views/dashboard-municipal.js"></script>
 
   <script src="js/views/placeholder.js"></script>
 
@@ -142,6 +161,20 @@
 
   <script src="js/app.js"></script>
 
+
+
+  <!-- =========================================================
+       PWA Service Worker
+       ========================================================= -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+          .then(() => console.log('[PWA] Service worker registered'))
+          .catch((error) => console.warn('[PWA] Service worker registration failed:', error));
+      });
+    }
+  </script>
 
 </body>
 

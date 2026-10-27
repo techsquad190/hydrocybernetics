@@ -11,10 +11,9 @@ const CONFIG = {
   // BACKEND
   // ============================================================
   API_BASE_URL:
-    window.location.origin.includes(':5000')
-      ? window.location.origin
-      : 'http://localhost:5000',
-
+  window.location.origin.includes(':5000')
+    ? window.location.origin
+    : 'http://10.55.112.89:5000',
   // ============================================================
   // BACKEND ENDPOINTS
   // ============================================================
@@ -75,7 +74,8 @@ const CONFIG = {
     MUNICIPAL_LEAK_ANALYSIS: '/municipal/leak-analysis',
     MUNICIPAL_ALERTS: '/municipal/alerts',
     MUNICIPAL_REPORTS: '/municipal/reports',
-    MUNICIPAL_ANALYTICS: '/municipal/analytics'
+    MUNICIPAL_ANALYTICS: '/municipal/analytics',
+    MUNICIPAL_TELEMETRY: '/municipal/telemetry'
   }
 };
 
